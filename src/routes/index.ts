@@ -6,6 +6,10 @@ import  RolesRouter  from '../app/modules/role/route'; // Fix this import
 import StaffRoutes from '../app/modules/staff/staff.routes';
 import setStuffRoutes from '../app/modules/staff/set.staff.routes';
 import ReportRoutes from '../app/modules/Report/Report.Routes';
+import ClientRoutes from '../app/modules/contact/client.routes';
+import invoiceRoutes from '../app/modules/invoice/invoice.Route';
+import LeadsRoutes from '../app/modules/contact/leads.routes';
+import AppointmentRoutes from '../app/modules/contact/appoinment.routes';
 
 const router = express.Router();
 
@@ -15,6 +19,10 @@ const apiRoutes = [
   { path: '/admin', route: RolesRouter },
   { path: '/staff', route: setStuffRoutes },
   { path: '/report', route: ReportRoutes },
+  { path: '/contact', route: ClientRoutes },
+  { path: '/invoice', route: invoiceRoutes },
+  { path: '/leads', route: LeadsRoutes },
+  { path: '/appointment', route: AppointmentRoutes },
 ];
 
 apiRoutes.forEach(route => {

@@ -10,6 +10,7 @@ import ClientRoutes from '../app/modules/contact/client.routes';
 import invoiceRoutes from '../app/modules/invoice/invoice.Route';
 import LeadsRoutes from '../app/modules/contact/leads.routes';
 import AppointmentRoutes from '../app/modules/contact/appoinment.routes';
+import ClassRoutes from '../app/modules/class/class.Route';
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ const apiRoutes = [
   { path: '/invoice', route: invoiceRoutes },
   { path: '/leads', route: LeadsRoutes },
   { path: '/appointment', route: AppointmentRoutes },
+  { path: '/class', route: ClassRoutes },
 ];
 
 apiRoutes.forEach(route => {

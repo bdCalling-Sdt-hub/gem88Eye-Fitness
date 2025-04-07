@@ -5,6 +5,7 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import  apiRoutes from './routes/index';
+import path from 'path'
 const app = express();
 
 //morgan
@@ -16,8 +17,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//file retrieve
-app.use(express.static('uploads'));
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));  // This is the correct path
+
 
 //router
 app.use('/api/v1', apiRoutes);

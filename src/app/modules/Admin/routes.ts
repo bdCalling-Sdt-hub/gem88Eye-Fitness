@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerAdmin, loginAdmin, changePassword, createLocation, getAllLocations, forgetPassword, verifyOTP, resetPassword } from "./controller";
+import { registerAdmin, loginAdmin, changePassword, createLocation, getAllLocations, forgetPassword, verifyOTP, resetPassword, getAdminProfile, updateAdminProfile } from "./controller";
 import { authenticateAdmin } from "../../middlewares/auth";
 
 
@@ -15,5 +15,7 @@ AdminRoutes.get("/location",authenticateAdmin,getAllLocations );
 AdminRoutes.post("/forget-password", authenticateAdmin,forgetPassword);
 AdminRoutes.post("/verify-otp",authenticateAdmin, verifyOTP);
 AdminRoutes.post("/reset-password", authenticateAdmin,resetPassword);
+AdminRoutes.get('/profile', authenticateAdmin, getAdminProfile);
+AdminRoutes.put('/profile', authenticateAdmin, updateAdminProfile); 
 
 export default AdminRoutes;

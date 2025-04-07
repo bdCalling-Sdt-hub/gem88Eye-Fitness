@@ -144,6 +144,107 @@ export const staffLogin = async (req: Request, res: Response) => {
     }
   };
 
+  export const getUserProfile = async (req: Request, res: Response) => {
+    try {
+      // The user is already attached to req by the authenticateUser middleware
+      const userId = req.user.id;  // This is set by the authenticateUser middleware
+  
+      // Fetch the user from the database using the decoded user ID
+      const user = await Role.findById(userId).select('-password');  // Exclude password from the result
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // Send back the user profile data (exclude sensitive fields like password)
+      const userProfile = {
+        id: user._id,
+        displayName: user.displayName,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+        accessControls: user.accessControls,
+        // You can add other fields as necessary
+      };
+  
+      res.status(200).json({ message: 'User profile fetched successfully', user: userProfile });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      res.status(500).json({ message: 'Error fetching user profile', error });
+    }
+  };
+
+  const upload = fileUploadHandler();
+
+  export const updateProfile = async (req: Request, res: Response) => {
+    // Handle image file upload first using multer
+    upload(req, res, async (err: any) => {
+      if (err) {
+        // Handle file upload errors (e.g., file size, type issues)
+        return res.status(400).json({ message: err.message });
+      }
+  
+      try {
+        const { displayName, email, password } = req.body; // Extract fields from request body
+        const user = req.user;  // This is set by the authenticateUser middleware
+  
+        // Prepare an object to store the updated data
+        const updatedUserData: any = {};
+  
+        // If displayName is provided, update it
+        if (displayName) {
+          updatedUserData.displayName = displayName;
+        }
+  
+        // If email is provided, update it
+        if (email) {
+          updatedUserData.email = email;
+        }
+  
+        // If password is provided, hash it and update
+        if (password) {
+          const hashedPassword = await bcrypt.hash(password, Number(process.env.BCRYPT_SALT_ROUNDS || 10));  // Hash password
+          updatedUserData.password = hashedPassword;
+        }
+  
+        // If an image is uploaded, save the file path to the database
+        if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
+          const files = req.files as { [fieldname: string]: Express.Multer.File[] }; // Explicitly cast req.files
+          const imagePath = '/uploads/image/' + files['image'][0].filename;  // Get image path from multer
+          updatedUserData.image = imagePath;
+        }
+  
+        // Update the user's profile in the database
+        const updatedUser = await Role.findByIdAndUpdate(user.id, updatedUserData, {
+          new: true,  // Return updated document
+          runValidators: true,  // Ensure validators are applied (e.g., email uniqueness)
+        });
+  
+        // If user not found, return an error
+        if (!updatedUser) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+  
+        // Send the updated user data as a response (excluding password)
+        const userProfile = {
+          id: updatedUser._id,
+          displayName: updatedUser.displayName,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          accessControls: updatedUser.accessControls,
+          image: updatedUser.image || 'https://i.ibb.co/z5YHLV9/profile.png',  // Default image if not uploaded
+          createdAt: updatedUser.createdAt,
+        
+        };
+  
+        res.status(200).json({ message: 'Profile updated successfully', user: userProfile });
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ message: 'Error updating profile', error });
+      }
+    });
+  };
+
   export const setPassword = async (req: Request, res: Response) => {
     try {
       const { email, newPassword, confirmPassword } = req.body;

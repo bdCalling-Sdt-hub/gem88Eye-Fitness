@@ -36,6 +36,101 @@ export const loginAdmin = async (req: Request, res: Response) => {
   }
 };
 
+export const updateAdminProfile = async (req: Request, res: Response) => {
+  try {
+    // Get the admin data attached to the request by the authenticateAdmin middleware
+    const admin = req.admin;
+
+    // Extract the updated fields from the request body
+    const { name, email, image } = req.body;
+
+    // Prepare an object to store the updated fields
+    const updatedAdminData: any = {};
+
+    // If the name is provided, update it
+    if (name) {
+      updatedAdminData.name = name;
+    }
+
+    // If the email is provided, update it
+    if (email) {
+      updatedAdminData.email = email;
+    }
+
+    // If the image is provided, update it
+    if (image) {
+      updatedAdminData.image = image;
+    }
+
+ 
+    if (!admin) {
+      return res.status(400).json({ message: "Admin is not authenticated" });
+    }
+    const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
+      new: true,  // Return the updated document
+      runValidators: true,  // Ensure validators are applied (e.g., email uniqueness)
+    });
+
+    // If admin is not found, return an error
+    if (!updatedAdmin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    // Send the updated admin data as a response (excluding sensitive data like password)
+    const adminProfile = {
+      id: updatedAdmin._id,
+      name: updatedAdmin.name,
+      email: updatedAdmin.email,
+      role: updatedAdmin.role,
+      image: updatedAdmin.image || 'https://i.ibb.co/z5YHLV9/profile.png',  // Default image if not provided
+      createdAt: updatedAdmin.createdAt,
+      updatedAt: updatedAdmin.updatedAt,
+    };
+
+    res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
+  } catch (error) {
+    console.error('Error updating admin profile:', error);
+    res.status(500).json({ message: 'Error updating admin profile', error });
+  }
+};
+
+export const getAdminProfile = async (req: Request, res: Response) => {
+  try {
+    // The admin is already attached to req by the authenticateAdmin middleware
+    const admin = req.admin;  // This is set by the authenticateAdmin middleware
+
+    // Log the admin to check if it is being set correctly
+    console.log('Admin in request:', admin);
+
+    // Fetch the admin data from the database using the decoded ID from the token
+    if (!admin) {
+      return res.status(400).json({ message: "Admin is not authenticated" });
+    }
+    const fetchedAdmin = await Admin.findById(admin.id).select('-password');  // Exclude password from the result
+
+    // If the admin is not found, return an error
+    if (!fetchedAdmin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    // Send back the admin profile data, excluding sensitive info like password
+    const adminProfile = {
+      id: fetchedAdmin._id,
+      name: fetchedAdmin.name,
+      email: fetchedAdmin.email,
+      role: fetchedAdmin.role,
+      createdAt: fetchedAdmin.createdAt,
+      updatedAt: fetchedAdmin.updatedAt,
+      // You can add other fields as needed
+    };
+
+    res.status(200).json({ message: 'Admin profile fetched successfully', admin: adminProfile });
+  } catch (error) {
+    console.error('Error fetching admin profile:', error);
+    res.status(500).json({ message: 'Error fetching admin profile', error });
+  }
+};
+
 export const forgetPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;  // Email passed in the body

@@ -6,6 +6,8 @@ export interface IStaff extends Document {
   expiryDate: Date;
   status: string; // Valid or Invalid
   role?: string; // Optional field for role
+  image?: string; // Optional field for image
+  createdAt?: Date; // Add createdAt property
 }
 
 const StaffSchema = new Schema<IStaff>(
@@ -21,6 +23,8 @@ const StaffSchema = new Schema<IStaff>(
       },
     },
     role: { type: String, required: false, default: "staff" }, // Default role is "staff"
+    image: { type: String, required: false },
+    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

@@ -6,6 +6,8 @@ export interface IRole extends Document {
   resetPasswordOTP: string;
   resetPasswordExpires: Date;
   role: string;
+  image?: string; // Optional field for image
+  createdAt?: Date; // Add createdAt property
   accessControls: string[];
   password?: string;
 }
@@ -27,6 +29,8 @@ const RoleSchema = new Schema<IRole>(
       ],
       required: true,
     },
+    image: { type: String, default: null },
+    createdAt: { type: Date, default: Date.now },
     accessControls: { type: [String], required: true },
     password: { type: String, required: false },
   },

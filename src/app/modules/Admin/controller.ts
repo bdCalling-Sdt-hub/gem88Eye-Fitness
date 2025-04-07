@@ -5,6 +5,9 @@ import Admin from "./admin.model";
 import {Location} from "./location.model"; 
 import { USStates } from "../../../enums/location.enum";
 import { isEmail } from 'validator';
+import { emailHelper } from "../../../helpers/emailHelper";
+import crypto from 'crypto';
+import Role from "../role/role.model";
 export const registerAdmin = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
@@ -27,11 +30,159 @@ export const loginAdmin = async (req: Request, res: Response) => {
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
-    res.status(200).json({ message: "Login successful", token });
+    res.status(200).json({ message: "Login successful", token, admin });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error });
   }
 };
+
+export const forgetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;  // Email passed in the body
+
+    // Check if the email exists in Admin model
+    let user = await Admin.findOne({ email });
+
+    // If not found in Admin, check in Staff model
+    if (!user) {
+      user = await Role.findOne({ email });
+    }
+
+    // If user doesn't exist, return error
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate OTP (6-digit number)
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Set OTP expiry (e.g., 10 minutes)
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    // Save OTP and expiration time to the user record
+    user.resetPasswordOTP = otp;
+    user.resetPasswordExpires = otpExpires;
+    await user.save();
+
+    // Send OTP to user's email
+    const htmlContent = `
+      <p>Your OTP for password reset is <strong>${otp}</strong>.</p>
+      <p>This OTP will expire in 10 minutes.</p>
+    `;
+    
+    await emailHelper.sendEmail({
+      to: email,
+      subject: 'Password Reset OTP',
+      html: htmlContent,
+    });
+
+    res.status(200).json({ message: "OTP sent successfully to your email." });
+
+  } catch (error) {
+    console.error("Error in forgetPassword:", error);
+    res.status(500).json({ message: "Error sending OTP", error });
+  }
+};
+
+// export const verifyOTP = async (req: Request, res: Response) => {
+//   try {
+//     const { email, otp, role } = req.body;
+
+//     // Find the user by email
+//     let user;
+//     if (role === 'admin') {
+//       user = await Admin.findOne({ email });
+//     } else if (role === 'staff') {
+//       user = await Role.findOne({ email });
+//     }
+
+//     if (!user || !user.resetPasswordOTP || !user.resetPasswordExpires) {
+//       return res.status(400).json({ message: "Invalid OTP request" });
+//     }
+
+//     // Check if OTP matches and is not expired
+//     if (user.resetPasswordOTP !== otp || new Date() > user.resetPasswordExpires) {
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
+//     }
+
+//     // Clear OTP fields after verification
+//     user.resetPasswordOTP = '';
+//     user.resetPasswordExpires = new Date(0); // Set to epoch time as a placeholder for "null"
+//     await user.save();
+
+//     res.status(200).json({ message: "OTP verified successfully" });
+
+//   } catch (error) {
+//     console.error("Error verifying OTP:", error);
+//     res.status(500).json({ message: "Error verifying OTP", error });
+//   }
+// };
+
+export const verifyOTP = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Find the user by email (search both Admin and Staff models)
+    let user = await Admin.findOne({ email });
+
+    if (!user) {
+      user = await Role.findOne({ email });
+    }
+
+    if (!user || !user.resetPasswordOTP || !user.resetPasswordExpires) {
+      return res.status(400).json({ message: "Invalid OTP request" });
+    }
+
+    // Check if OTP matches and is not expired
+    if (user.resetPasswordOTP !== otp || new Date() > user.resetPasswordExpires) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Clear OTP fields after verification
+    user.resetPasswordOTP = '';
+    user.resetPasswordExpires = new Date(0); 
+    await user.save();
+
+    res.status(200).json({ message: "OTP verified successfully" });
+
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    res.status(500).json({ message: "Error verifying OTP", error });
+  }
+};
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    // Ensure passwords match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // Find the user by email (search both Admin and Staff models)
+    let user = await Admin.findOne({ email });
+
+    if (!user) {
+      user = await Role.findOne({ email });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash the new password and update the user's password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ message: "Error resetting password", error });
+  }
+};
+
 
 export const changePassword = async (req: Request, res: Response) => {
   try {

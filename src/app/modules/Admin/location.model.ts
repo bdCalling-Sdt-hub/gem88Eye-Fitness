@@ -46,9 +46,9 @@ const LocationSchema = new Schema<ILocation>({
   },
   locationType: { type: String, required: false },
   hourRate: { type: Number, required: false },
-  hours: { type: Number, required: false }, // ✅ Add this field
+  hours: { type: Number, required: false },
   mileRate: { type: Number, required: false },
-  date: { type: Date, required: false },  // ✅ Add this field
+  date: { type: Date, required: false },  
   miles: { type: Number, required: false },
   description: { type: String, required: true },
   firstName: { type: String, required: true },
@@ -58,6 +58,4 @@ const LocationSchema = new Schema<ILocation>({
   workType: { type: String, enum: ["online", "offline"], required: true },
 });
 
-
-// Export as named export
 export const Location = mongoose.model<ILocation>("Location", LocationSchema);

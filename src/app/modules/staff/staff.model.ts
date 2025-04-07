@@ -5,6 +5,7 @@ export interface IStaff extends Document {
   documents: string[];
   expiryDate: Date;
   status: string; // Valid or Invalid
+  role?: string; // Optional field for role
 }
 
 const StaffSchema = new Schema<IStaff>(
@@ -19,6 +20,7 @@ const StaffSchema = new Schema<IStaff>(
         return new Date(this.expiryDate) > new Date() ? "valid" : "invalid";
       },
     },
+    role: { type: String, required: false, default: "staff" }, // Default role is "staff"
   },
   { timestamps: true }
 );

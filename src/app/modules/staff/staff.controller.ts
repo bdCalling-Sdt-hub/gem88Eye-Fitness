@@ -37,7 +37,51 @@ export const createStaff = async (req: Request, res: Response) => {
       }
     });
   };
+  //edit staff
+  export const editStaff = async (req: Request, res: Response) => {
+    try {
+      const { staffId } = req.params;
+      const { name, expiryDate } = req.body;
   
+      const staff = await Staff.findById(staffId);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff not found" });
+      }
+  
+      staff.name = name;
+      staff.expiryDate = expiryDate;
+  
+      await staff.save();
+  
+      res.status(200).json({
+        message: "Staff updated successfully",
+        staff,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error updating staff", error });
+    }
+  };
+
+
+
+  //Delete staff
+  export const deleteStaff = async (req: Request, res: Response) => {
+    try {
+      const { staffId } = req.params;
+  
+      const staff = await Staff.findByIdAndDelete(staffId);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff not found" });
+      }
+  
+      res.status(200).json({
+        message: "Staff deleted successfully",
+        staff,
+      });
+    } catch (error) { 
+      res.status(500).json({ message: "Error deleting staff", error });
+    }
+  };
   
 
 // ➤ GET ALL STAFF MEMBERS
@@ -93,7 +137,7 @@ export const staffLogin = async (req: Request, res: Response) => {
         { expiresIn: "1d" }
       );
   
-      res.status(200).json({ message: "Login successful", token });
+      res.status(200).json({ message: "Login successful", token , user });
     } catch (error) {
       console.error("Error in staffLogin:", error);
       res.status(500).json({ message: "Error logging in", error});

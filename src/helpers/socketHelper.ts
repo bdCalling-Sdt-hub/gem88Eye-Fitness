@@ -1,14 +1,18 @@
 import colors from 'colors';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { logger } from '../shared/logger';
 
 const socket = (io: Server) => {
-  io.on('connection', socket => {
-    logger.info(colors.blue('A user connected'));
+  io.on('connection', (socket: Socket) => {
+    logger.info(colors.blue(`🟢 A user connected: ${socket.id}`));
 
-    //disconnect
+    socket.on('join', (userId: string) => {
+      socket.join(userId);
+      logger.info(colors.green(`👤 User joined room: ${userId}`));
+    });
+
     socket.on('disconnect', () => {
-      logger.info(colors.red('A user disconnect'));
+      logger.info(colors.red(`🔴 A user disconnected: ${socket.id}`));
     });
   });
 };

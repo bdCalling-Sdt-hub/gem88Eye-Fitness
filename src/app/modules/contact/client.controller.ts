@@ -50,6 +50,42 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
     }
   };
 
+  export const updateClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { id } = req.params;  // Change clientId to id to match the route parameter
+    const { client_name, client_email, address, gender, phone } = req.body;
+  
+    try {
+      // Find the client by ID
+      const clientToUpdate = await Client.findById(id); // Use 'id' instead of 'clientId'
+    
+      // If the client is not found, return a 404 error
+      if (!clientToUpdate) {
+         res.status(404).json({ success: false, message: 'Client not found!' });
+         return;
+      }
+  
+      // Only update fields that are provided in the request body
+      if (client_name) clientToUpdate.client_name = client_name;
+      if (client_email) clientToUpdate.client_email = client_email;
+      if (address) clientToUpdate.address = address;
+      if (gender) clientToUpdate.gender = gender;
+      if (phone) clientToUpdate.phone = phone;
+  
+      // Save the updated client
+      await clientToUpdate.save();
+  
+      // Return the updated client
+      res.status(200).json({
+        success: true,
+        message: 'Client updated successfully!',
+        data: clientToUpdate,
+      });
+    } catch (err) {
+      next(err);  // Pass any errors to the global error handler
+    }
+  };
+  
+
   export const updateClientStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const clientId = req.params.id;  // Get the client ID from the URL
     const { active } = req.body;  // Get the new active status from the request body

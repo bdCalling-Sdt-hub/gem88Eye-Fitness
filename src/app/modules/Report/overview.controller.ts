@@ -1,9 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import PaymentReport from "./paymentReport.model";
 import MilesReport from "./miles.model";
 import { Parser } from "json2csv";
-
-
+import Class from "../class/class.model";
+import  Staff  from '../staff/staff.model'; 
+import moment from 'moment';
 export const exportCSV = async (req: Request, res: Response) => {
     try {
       const { staffName, filterType } = req.query;
@@ -160,4 +161,119 @@ const getDateFilter = (filterType: string) => {
     }
   };
 
+  export const getAllReportsOV = async (req: Request, res: Response) => {
+    try {
+      // 1. Get total number of classes
+      const totalClasses = await Class.countDocuments();  // Counts all classes
+  
+      // 2. Get total number of instructors (staff)
+      const totalInstructors = await Staff.countDocuments(); // Counts all staff members (instructors)
+  
+      // 3. Get all Payment Reports to calculate total payroll
+      const paymentReports = await PaymentReport.find();
+  
+      // Calculate total payroll amount
+      let totalPayrollAmount = 0;
+      paymentReports.forEach((report) => {
+        report.workDetails.forEach((work) => {
+          totalPayrollAmount += work.hours * work.hourRate; // Summing hours * hourly rate for payroll calculation
+        });
+      });
+  
+      // 4. Calculate total miles amount (if applicable)
+      const milesReports = await MilesReport.find(); // Assuming you have MilesReport model
+  
+      let totalMilesAmount = 0;
+      milesReports.forEach((report) => {
+        report.milesDetails.forEach((miles) => {
+          totalMilesAmount += miles.miles * miles.mileRate; // Summing miles * mile rate for miles calculation
+        });
+      });
+  
+      // 5. Return the aggregated data
+      return res.status(200).json({
+        success: true,
+        message: 'All reports fetched successfully',
+        totalClasses,         // Total number of classes
+        totalPayrollAmount,   // Total payroll amount
+        totalInstructors,     // Total number of instructors (staff)
+        totalMilesAmount,     // Total miles amount (if applicable)
+        paymentReports,       // Payment reports data
+        milesReports,         // Miles reports data
+      });
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      return res.status(500).json({ message: "Error fetching reports", error });
+    }
+  };
 
+  //csv report home page
+  export const exportReportsAsCSV = async (req: Request, res: Response, next: NextFunction) => {
+    const { timePeriod } = req.query;  // bi-weekly, monthly, yearly
+    
+    try {
+      let startDate: Date;
+      let endDate: Date;
+  
+      // Set date range based on the selected time period
+      if (timePeriod === 'bi-weekly') {
+        startDate = moment().subtract(2, 'weeks').startOf('week').toDate();
+        endDate = moment().toDate();
+      } else if (timePeriod === 'monthly') {
+        startDate = moment().startOf('month').toDate();
+        endDate = moment().endOf('month').toDate();
+      } else if (timePeriod === 'yearly') {
+        startDate = moment().startOf('year').toDate();
+        endDate = moment().endOf('year').toDate();
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid time period. Please use 'bi-weekly', 'monthly', or 'yearly'."
+        });
+      }
+  
+      // Fetch total classes, total instructors (staff), and payment reports within the date range
+      const totalClasses = await Class.countDocuments(); // Counts all classes
+      const totalInstructors = await Staff.countDocuments(); // Counts all staff members (instructors)
+    
+      const paymentReports = await PaymentReport.find({
+        date: { $gte: startDate, $lte: endDate },
+      });
+  
+      let totalPayrollAmount = 0;
+      paymentReports.forEach((report) => {
+        report.workDetails.forEach((work) => {
+          totalPayrollAmount += work.hours * work.hourRate;
+        });
+      });
+  
+      const milesReports = await MilesReport.find({
+        date: { $gte: startDate, $lte: endDate },
+      });
+  
+      let totalMilesAmount = 0;
+      milesReports.forEach((report) => {
+        report.milesDetails.forEach((miles) => {
+          totalMilesAmount += miles.miles * miles.mileRate;
+        });
+      });
+  
+      // Prepare CSV headers and the data for CSV export
+      const reportData = [
+        { "Total Classes": totalClasses, "Total Instructors": totalInstructors, "Total Payroll Amount": totalPayrollAmount, "Total Miles Amount": totalMilesAmount },
+      ];
+  
+      // Prepare the CSV data
+      const json2csvParser = new Parser();
+      const csvData = json2csvParser.parse(reportData);
+  
+      // Set the headers for the CSV file download
+      res.header('Content-Type', 'text/csv');
+      res.attachment(`report-${timePeriod}.csv`);
+      return res.send(csvData);
+  
+    } catch (error) {
+      console.error("Error generating report:", error);
+      return res.status(500).json({ message: "Error generating report", error });
+    }
+  };

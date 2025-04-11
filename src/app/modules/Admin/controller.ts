@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Admin from "./admin.model";
@@ -8,6 +8,8 @@ import { isEmail } from 'validator';
 import { emailHelper } from "../../../helpers/emailHelper";
 import crypto from 'crypto';
 import Role from "../role/role.model";
+import multer from "multer";
+import fileUploadHandler from "../../middlewares/fileUploadHandler";
 export const registerAdmin = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
@@ -36,92 +38,231 @@ export const loginAdmin = async (req: Request, res: Response) => {
   }
 };
 
-export const updateAdminProfile = async (req: Request, res: Response) => {
-  try {
-    // Get the admin data attached to the request by the authenticateAdmin middleware
-    const admin = req.admin;
+// export const updateAdminProfile = async (req: Request, res: Response) => {
+//   try {
+//     // Get the admin data attached to the request by the authenticateAdmin middleware
+//     const admin = req.admin;
 
-    // Extract the updated fields from the request body
-    const { name, email, image } = req.body;
+//     // Extract the updated fields from the request body
+//     const { name, email, image } = req.body;
 
-    // Prepare an object to store the updated fields
-    const updatedAdminData: any = {};
+//     // Prepare an object to store the updated fields
+//     const updatedAdminData: any = {};
 
-    // If the name is provided, update it
-    if (name) {
-      updatedAdminData.name = name;
-    }
+//     // If the name is provided, update it
+//     if (name) {
+//       updatedAdminData.name = name;
+//     }
 
-    // If the email is provided, update it
-    if (email) {
-      updatedAdminData.email = email;
-    }
+//     // If the email is provided, update it
+//     if (email) {
+//       updatedAdminData.email = email;
+//     }
 
-    // If the image is provided, update it
-    if (image) {
-      updatedAdminData.image = image;
-    }
+//     // If the image is provided, update it
+//     if (image) {
+//       updatedAdminData.image = image;
+//     }
 
  
-    if (!admin) {
-      return res.status(400).json({ message: "Admin is not authenticated" });
+//     if (!admin) {
+//       return res.status(400).json({ message: "Admin is not authenticated" });
+//     }
+//     const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
+//       new: true,  // Return the updated document
+//       runValidators: true,  // Ensure validators are applied (e.g., email uniqueness)
+//     });
+
+//     // If admin is not found, return an error
+//     if (!updatedAdmin) {
+//       return res.status(404).json({ message: 'Admin not found' });
+//     }
+
+//     // Send the updated admin data as a response (excluding sensitive data like password)
+//     const adminProfile = {
+//       id: updatedAdmin._id,
+//       name: updatedAdmin.name,
+//       email: updatedAdmin.email,
+//       role: updatedAdmin.role,
+//       image: updatedAdmin.image || '',  // Default image if not provided
+//       createdAt: updatedAdmin.createdAt,
+//       updatedAt: updatedAdmin.updatedAt,
+//     };
+
+//     res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
+//   } catch (error) {
+//     console.error('Error updating admin profile:', error);
+//     res.status(500).json({ message: 'Error updating admin profile', error });
+//   }
+// };
+
+const upload = fileUploadHandler();
+// export const updateAdminProfile = async (req: Request, res: Response) => {
+//   // Handle image upload first using multer
+//   upload(req, res, async (err: any) => {
+//     if (err) {
+//       // Handle file upload errors
+//       return res.status(400).json({ message: err.message });
+//     }
+
+//     try {
+//       const admin = req.admin;
+//       if (!admin) {
+//         return res.status(400).json({ message: 'Admin is not authenticated' });
+//       }
+
+//       const { name, email } = req.body;
+
+//       const updatedAdminData: any = {};
+
+//       if (name) {
+//         updatedAdminData.name = name;
+//       }
+
+//       if (email) {
+//         updatedAdminData.email = email;
+//       }
+
+//       if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
+//         const files = req.files as { [fieldname: string]: Express.Multer.File[] }; 
+//         const imagePath = '/uploads/image/' + files['image'][0].filename;  
+//         updatedAdminData.image = imagePath;
+//       }
+
+
+//       const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
+//         new: true, 
+//         runValidators: true, 
+//       });
+
+//       if (!updatedAdmin) {
+//         return res.status(404).json({ message: 'Admin not found' });
+//       }
+
+//       const adminProfile = {
+//         id: updatedAdmin._id,
+//         name: updatedAdmin.name,
+//         email: updatedAdmin.email,
+//         role: updatedAdmin.role,
+//         image: updatedAdmin.image || '', 
+//         createdAt: updatedAdmin.createdAt,
+//         updatedAt: updatedAdmin.updatedAt,
+//       };
+
+//       res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
+//     } catch (error) {
+//       console.error('Error updating admin profile:', error);
+//       res.status(500).json({ message: 'Error updating admin profile', error });
+//     }
+//   });
+// };
+
+export const updateAdminProfile = async (req: Request, res: Response) => {
+  // Handle image upload first using multer
+  upload(req, res, async (err: any) => {
+    if (err) {
+      // Handle file upload errors
+      return res.status(400).json({ message: err.message });
     }
-    const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
-      new: true,  // Return the updated document
-      runValidators: true,  // Ensure validators are applied (e.g., email uniqueness)
-    });
 
-    // If admin is not found, return an error
-    if (!updatedAdmin) {
-      return res.status(404).json({ message: 'Admin not found' });
+    try {
+      const admin = req.admin;
+      if (!admin) {
+        return res.status(400).json({ message: 'Admin is not authenticated' });
+      }
+
+      const { name, email, businessName, address } = req.body;
+
+      const updatedAdminData: any = {};
+
+      // Update name if provided
+      if (name) {
+        updatedAdminData.name = name;
+      }
+
+      // Update email if provided
+      if (email) {
+        updatedAdminData.email = email;
+      }
+
+      // Update businessName if provided (optional)
+      if (businessName) {
+        updatedAdminData.businessName = businessName;
+      }
+
+      // Update address if provided (optional)
+      if (address) {
+        updatedAdminData.address = address;
+      }
+
+      // Handle image upload if provided
+      if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] }; 
+        const imagePath = '/uploads/image/' + files['image'][0].filename;  
+        updatedAdminData.image = imagePath;
+      }
+
+      // Update the admin profile in the database
+      const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
+        new: true, // Return updated document
+        runValidators: true, // Ensure validators are applied
+      });
+
+      // If admin not found, return an error
+      if (!updatedAdmin) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+
+      // Prepare the admin profile response
+      const adminProfile = {
+        id: updatedAdmin._id,
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        businessName: updatedAdmin.businessName || '', // If no businessName, return an empty string
+        address: updatedAdmin.address || '', // If no address, return an empty string
+        role: updatedAdmin.role,
+        image: updatedAdmin.image || '', // Default image if not provided
+        createdAt: updatedAdmin.createdAt,
+        updatedAt: updatedAdmin.updatedAt,
+      };
+
+      // Send the updated admin profile in the response
+      res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
+    } catch (error) {
+      console.error('Error updating admin profile:', error);
+      res.status(500).json({ message: 'Error updating admin profile', error });
     }
-
-    // Send the updated admin data as a response (excluding sensitive data like password)
-    const adminProfile = {
-      id: updatedAdmin._id,
-      name: updatedAdmin.name,
-      email: updatedAdmin.email,
-      role: updatedAdmin.role,
-      image: updatedAdmin.image || 'https://i.ibb.co/z5YHLV9/profile.png',  // Default image if not provided
-      createdAt: updatedAdmin.createdAt,
-      updatedAt: updatedAdmin.updatedAt,
-    };
-
-    res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
-  } catch (error) {
-    console.error('Error updating admin profile:', error);
-    res.status(500).json({ message: 'Error updating admin profile', error });
-  }
+  });
 };
 
 export const getAdminProfile = async (req: Request, res: Response) => {
   try {
-    // The admin is already attached to req by the authenticateAdmin middleware
-    const admin = req.admin;  // This is set by the authenticateAdmin middleware
+    const admin = req.admin;
 
-    // Log the admin to check if it is being set correctly
     console.log('Admin in request:', admin);
 
-    // Fetch the admin data from the database using the decoded ID from the token
     if (!admin) {
       return res.status(400).json({ message: "Admin is not authenticated" });
     }
-    const fetchedAdmin = await Admin.findById(admin.id).select('-password');  // Exclude password from the result
+    const fetchedAdmin = await Admin.findById(admin.id).select('-password');  
 
-    // If the admin is not found, return an error
+
     if (!fetchedAdmin) {
       return res.status(404).json({ message: 'Admin not found' });
     }
 
-    // Send back the admin profile data, excluding sensitive info like password
+
     const adminProfile = {
       id: fetchedAdmin._id,
       name: fetchedAdmin.name,
+      businessName: fetchedAdmin.businessName || '', // If no businessName, return an empty string
+      address: fetchedAdmin.address || '', // If no address, return an empty string
       email: fetchedAdmin.email,
       role: fetchedAdmin.role,
+      image: fetchedAdmin.image || 'https://i.ibb.co/z5YHLV9/profile.png',
       createdAt: fetchedAdmin.createdAt,
       updatedAt: fetchedAdmin.updatedAt,
-      // You can add other fields as needed
+ 
     };
 
     res.status(200).json({ message: 'Admin profile fetched successfully', admin: adminProfile });
@@ -354,51 +495,255 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const createLocation = async (req: Request, res: Response) => {
   try {
-    const { locationName, address, region, locationType, hourRate, firstName, lastName, email, mobileNumber, workType } = req.body;
-
-    // Validate required fields
-    if (!locationName || !address || !region || !hourRate || !firstName || !lastName || !email || !mobileNumber || !workType) {
-      return res.status(400).json({ message: "All required fields must be provided." });
-    }
-
-    // Validate email format
-    if (!isEmail(email)) {
-      return res.status(400).json({ message: "Invalid email format." });
-    }
-
-    // Validate the region to ensure it's an array of valid states
-    if (!Array.isArray(region) || !region.every(r => Object.values(USStates).includes(r))) {
-      return res.status(400).json({ message: "Invalid region(s) provided." });
-    }
-
-    const location = new Location({
+    const {
       locationName,
       address,
-      region,
-      locationType: locationType || null, // Optional field
+      region,  // region is an array of strings containing state/city
+      locationType,
       hourRate,
+      hours,
+      mileRate,
+      miles,
+      description,
+      firstName,
+      lastName,
+      email,
+      mobileNumber,
+      workType
+    } = req.body;
+
+    // Ensure that region is provided and it's an array
+    if (!region || !Array.isArray(region)) {
+      return res.status(400).json({ message: "Region must be an array of states/cities." });
+    }
+
+    // Build the location object to save in the database
+    const newLocation = new Location({
+      locationName,
+      address,
+      region,  // Directly using region (state/city) as strings
+      locationType,
+      hourRate,
+      hours,
+      mileRate,
+      miles,
+      description,
       firstName,
       lastName,
       email,
       mobileNumber,
       workType,
+      date: new Date(),  // Current date
+      status: 'active',  // Default status is active
     });
 
-    await location.save();
-    return res.status(201).json({ message: "Location created successfully", location });
+    // Save the location to the database
+    const savedLocation = await newLocation.save();
+
+    return res.status(201).json({
+      message: "Location created successfully",
+      location: savedLocation,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "Error creating location", error: (error as Error).message });
+    console.error("Error creating location:", error);
+    return res.status(500).json({
+      message: "Error creating location",
+      error: (error as Error).message,
+    });
   }
 };
 
 
-export const getAllLocations = async (_req: Request, res: Response) => {
+
+
+export const updateLocation = async (req: Request, res: Response) => {
   try {
-    const locations = await Location.find();
+    const { locationId } = req.params;
+    const {
+      locationName,
+      address,
+      region,  // region is an array of strings containing state/city
+      locationType,
+      hourRate,
+      hours,
+      mileRate,
+      miles,
+      description,
+      firstName,
+      lastName,
+      email,
+      mobileNumber,
+      workType,
+      removeFields = [] // Fields to remove
+    } = req.body;
+
+    // Ensure that region is provided and it's an array
+    if (region && !Array.isArray(region)) {
+      return res.status(400).json({ message: "Region must be an array of states/cities." });
+    }
+
+    // Prepare the update object
+    const updateData: any = {};
+
+    // Add fields to be updated
+    if (locationName) updateData.locationName = locationName;
+    if (address) updateData.address = address;
+    if (region) updateData.region = region;  // Directly updating the region (state/city)
+    if (locationType) updateData.locationType = locationType;
+    if (hourRate) updateData.hourRate = hourRate;
+    if (hours) updateData.hours = hours;
+    if (mileRate) updateData.mileRate = mileRate;
+    if (miles) updateData.miles = miles;
+    if (description) updateData.description = description;
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+    if (email) updateData.email = email;
+    if (mobileNumber) updateData.mobileNumber = mobileNumber;
+    if (workType) updateData.workType = workType;
+
+    // Prepare fields to be removed
+    const unsetData: any = {};
+    removeFields.forEach((field: string) => {
+      unsetData[field] = "";
+    });
+
+    // Update the location in the database
+    const updatedLocation = await Location.findByIdAndUpdate(
+      locationId,
+      { $set: updateData, $unset: unsetData },
+      { new: true }
+    );
+
+    if (!updatedLocation) {
+      return res.status(404).json({ message: "Location not found." });
+    }
+
+    return res.status(200).json({
+      message: "Location updated successfully",
+      location: updatedLocation,
+    });
+  } catch (error) {
+    console.error("Error updating location:", error);
+    return res.status(500).json({
+      message: "Error updating location",
+      error: (error as Error).message,
+    });
+  }
+};
+
+
+export const updateLocationStatus = async (req: Request, res: Response) => {
+  try {
+    const { locationId, status } = req.body;
+
+    // Validate the status
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status. Must be 'active' or 'inactive'." });
+    }
+
+    // Update the status only, without triggering validation for other fields like description
+    const result = await Location.updateOne(
+      { _id: locationId },  // Filter by locationId
+      { $set: { status } }   // Only update the status field
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Location not found or status already set to the same value." });
+    }
+
+    return res.status(200).json({
+      message: `Location status updated to ${status}`,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error updating location status", error: (error as Error).message });
+  }
+};
+
+export const deleteLocation = async (req: Request, res: Response) => {
+  try {
+    const { locationId } = req.params;  // Location ID from URL params
+
+    // Find the location by ID
+    const location = await Location.findById(locationId);
+    
+    if (!location) {
+      return res.status(404).json({ message: "Location not found." });
+    }
+
+    // Delete the location
+    await Location.findByIdAndDelete(locationId);
+
+    return res.status(200).json({
+      message: "Location removed successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error removing location",
+      error: (error as Error).message
+    });
+  }
+};
+
+
+// export const getAllLocations = async (req: Request, res: Response) => {
+//   try {
+//     // Get the status filter from the query parameters (if provided)
+//     const status = req.query.status;
+
+//     // Build the query based on the status filter
+//     const query: any = {};
+
+//     if (status) {
+//       // Validate status value (either 'active' or 'inactive')
+//       if (status !== 'active' && status !== 'inactive') {
+//         return res.status(400).json({ message: "Invalid status. Please use 'active' or 'inactive'." });
+//       }
+//       query.status = status;  // Add status filter to the query
+//     }
+
+//     // Fetch locations from the database based on the query
+//     const locations = await Location.find(query);
+
+//     return res.status(200).json(locations);  // Return the filtered locations
+//   } catch (error) {
+//     return res.status(500).json({ message: "Error fetching locations", error: (error as Error).message });
+//   }
+// };
+
+export const getAllLocations = async (req: Request, res: Response) => {
+  try {
+    // Get the status and workType filters from the query parameters (if provided)
+    const { status, workType } = req.query;
+
+    // Build the query based on the filters
+    const query: any = {};
+
+    // Validate and add status filter to query
+    if (status) {
+      if (status !== 'active' && status !== 'inactive') {
+        return res.status(400).json({ message: "Invalid status. Please use 'active' or 'inactive'." });
+      }
+      query.status = status;
+    }
+
+    // Validate and add workType filter to query
+    if (workType) {
+      if (workType !== 'online' && workType !== 'offline') {
+        return res.status(400).json({ message: "Invalid workType. Please use 'online' or 'offline'." });
+      }
+      query.workType = workType;
+    }
+
+    // Fetch locations from the database based on the query
+    const locations = await Location.find(query);
+
+    // Return the filtered locations
     return res.status(200).json(locations);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching locations", error: (error as Error).message });
   }
 };
+
+
 
 

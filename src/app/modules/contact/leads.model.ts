@@ -8,6 +8,8 @@ interface ILead extends Document {
   gender: string;
   phone: string;
   active: boolean;
+  lead: mongoose.Schema.Types.ObjectId; 
+  staff: mongoose.Schema.Types.ObjectId; 
   createdAt: Date;
 }
 
@@ -19,6 +21,8 @@ const leadSchema: Schema = new Schema({
   gender: { type: String, required: true },
   phone: { type: String, required: true },
   active: { type: Boolean, default: true },
+  lead: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: false },
+  staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', required: false },
   createdAt: { type: Date, default: Date.now },
 });
 

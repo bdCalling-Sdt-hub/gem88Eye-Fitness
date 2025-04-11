@@ -11,6 +11,8 @@ import invoiceRoutes from '../app/modules/invoice/invoice.Route';
 import LeadsRoutes from '../app/modules/contact/leads.routes';
 import AppointmentRoutes from '../app/modules/contact/appoinment.routes';
 import ClassRoutes from '../app/modules/class/class.Route';
+import EventRoutes from '../app/modules/event/event.routes';
+import NotificationRoutes from '../app/modules/notification/notification.Routes';
 
 const router = express.Router();
 
@@ -25,6 +27,8 @@ const apiRoutes = [
   { path: '/leads', route: LeadsRoutes },
   { path: '/appointment', route: AppointmentRoutes },
   { path: '/class', route: ClassRoutes },
+  { path: '/event', route: EventRoutes },
+  { path: '/notification', route: NotificationRoutes },
 ];
 
 apiRoutes.forEach(route => {

@@ -2,18 +2,22 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IStaff extends Document {
   name: string;
-  documents: string[];
+  businessName?: string; 
+  address?: string;
+  documents: string;
   expiryDate: Date;
-  status: string; // Valid or Invalid
-  role?: string; // Optional field for role
-  image?: string; // Optional field for image
-  createdAt?: Date; // Add createdAt property
+  status: string; 
+  role?: string; 
+  image?: string; 
+  createdAt?: Date;
 }
 
 const StaffSchema = new Schema<IStaff>(
   {
     name: { type: String, required: true },
-    documents: { type: [String], required: true },
+    businessName: { type: String, required: false },
+    address: { type: String, required: false },
+    documents: { type: String, required: true }, 
     expiryDate: { type: Date, required: true },
     status: {
       type: String,

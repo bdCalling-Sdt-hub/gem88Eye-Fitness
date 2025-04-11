@@ -8,60 +8,148 @@ import jwt from "jsonwebtoken";
 import Role from "../role/role.model";
 import path from "path";
 import { emailHelper } from "../../../helpers/emailHelper";
-// ➤ CREATE A NEW STAFF MEMBER WITH FILE UPLOAD
+
+
+// export const createStaff = async (req: Request, res: Response) => {
+//   fileUploadHandler()(req, res, async (err) => {
+//     if (err) {
+//       return res.status(400).json({ message: "File upload error", error: err });
+//     }
+
+//     try {
+//       const { name, expiryDate } = req.body;
+
+//       // Check if files exist under the "doc" field and get the first file path
+//       let document: string | null = null;
+
+//       if (req.files && "doc" in req.files) {
+//         // Get the first file (since only one file is allowed)
+//         const file = (req.files["doc"] as Express.Multer.File[])[0];
+//         document = path.join('uploads', 'doc', file.filename).replace(/\\/g, '/');
+//       }
+
+//       // Create a new staff record with the document path
+//       const staff = new Staff({ name, documents: document ?? "", expiryDate, status: "valid" });
+//       await staff.save();
+
+//       res.status(201).json({
+//         message: "Staff created successfully",
+//         staff,
+//       });
+//     } catch (error) {
+//       res.status(500).json({ message: "Error creating staff", error });
+//     }
+//   });
+// };
+
 export const createStaff = async (req: Request, res: Response) => {
-    fileUploadHandler()(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ message: "File upload error", error: err });
-      }
-  
-      try {
-        const { name, expiryDate } = req.body;
-  
-        // Extract relative file paths
-        const documents = req.files && "doc" in req.files
-          ? (req.files["doc"] as Express.Multer.File[]).map((file) => 
-              path.relative(process.cwd(), file.path) // ✅ Convert to relative path
-            )
-          : [];
-  
-        const staff = new Staff({ name, documents, expiryDate });
-        await staff.save();
-  
-        res.status(201).json({
-          message: "Staff created successfully",
-          staff,
-        });
-      } catch (error) {
-        res.status(500).json({ message: "Error creating staff", error });
-      }
-    });
-  };
-  //edit staff
-  export const editStaff = async (req: Request, res: Response) => {
+  fileUploadHandler()(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: "File upload error", error: err });
+    }
+
     try {
-      const { staffId } = req.params;
       const { name, expiryDate } = req.body;
-  
-      const staff = await Staff.findById(staffId);
-      if (!staff) {
-        return res.status(404).json({ message: "Staff not found" });
+
+      // Check if files exist under the "doc" field and get the first file path
+      let document: string | null = null;
+
+      if (req.files && "documents" in req.files) {
+        // Get the first file (since only one file is allowed)
+        const file = (req.files["documents"] as Express.Multer.File[])[0];
+
+        // Use path to get a relative path for the file
+        document = `/uploads/documents/${file.filename}`;
       }
-  
-      staff.name = name;
-      staff.expiryDate = expiryDate;
-  
+
+      // Create a new staff record with the document path
+      const staff = new Staff({ name, documents: document ?? "", expiryDate, status: "valid" });
       await staff.save();
-  
-      res.status(200).json({
-        message: "Staff updated successfully",
+
+      res.status(201).json({
+        message: "Staff created successfully",
         staff,
       });
     } catch (error) {
-      res.status(500).json({ message: "Error updating staff", error });
+      res.status(500).json({ message: "Error creating staff", error });
     }
-  };
+  });
+};
 
+export const getAllStaff = async (req: Request, res: Response) => {
+  try {
+    const { status } = req.query; // Optional filter: "valid" or "invalid"
+
+    // Build the filter based on the query parameter
+    let filter = {};
+    if (status === "valid") {
+      filter = { status: "valid" }; // Assuming `status` is the field that indicates validity
+    } else if (status === "invalid") {
+      filter = { status: "invalid" };
+    }
+
+    // Find all staff with the filter and include `documents` field
+    const staff = await Staff.find(filter).select("name status documents expiryDate role createdAt");
+
+    // Make sure document paths are accessible via the base URL
+    const staffWithDocumentPaths = staff.map((staffMember) => ({
+      ...staffMember.toObject(),
+      documents: staffMember.documents ? `${staffMember.documents}` : null,  // Ensure correct path format
+    }));
+
+    res.status(200).json({
+      message: "Staff retrieved successfully",
+      staff: staffWithDocumentPaths,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching staff", error });
+  }
+};
+
+
+  export const editStaff = async (req: Request, res: Response) => {
+    // Handle image upload first using multer
+    upload(req, res, async (err: any) => {
+      if (err) {
+        // Handle file upload errors
+        return res.status(400).json({ message: err.message });
+      }
+  
+      try {
+        const { staffId } = req.params;
+        const { name, expiryDate, businessName, address } = req.body;
+  
+        const staff = await Staff.findById(staffId);
+        if (!staff) {
+          return res.status(404).json({ message: "Staff not found" });
+        }
+  
+        // Update staff fields if provided
+        if (name) staff.name = name;
+        if (expiryDate) staff.expiryDate = expiryDate;
+        if (businessName) staff.businessName = businessName;
+        if (address) staff.address = address;
+  
+        // If an image is uploaded, save the file path to the database
+        if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
+          const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+          const imagePath = '/uploads/image/' + files['image'][0].filename;  // Image path
+          staff.image = imagePath;
+        }
+  
+        // Save the updated staff document
+        await staff.save();
+  
+        res.status(200).json({
+          message: "Staff updated successfully",
+          staff,
+        });
+      } catch (error) {
+        res.status(500).json({ message: "Error updating staff", error });
+      }
+    });
+  };
+  
 
 
   //Delete staff
@@ -83,31 +171,6 @@ export const createStaff = async (req: Request, res: Response) => {
     }
   };
   
-
-// ➤ GET ALL STAFF MEMBERS
-export const getAllStaff = async (req: Request, res: Response) => {
-  try {
-    const { status } = req.query; // Optional filter: "valid" or "invalid"
-
-    let filter = {};
-    if (status === "valid") {
-      filter = { isValid: true };
-    } else if (status === "invalid") {
-      filter = { isValid: false };
-    }
-
-    const staff = await Staff.find(filter);
-
-    res.status(200).json({
-      message: "Staff retrieved successfully",
-      staff,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching staff", error });
-  }
-};
-
-
 
 export const staffLogin = async (req: Request, res: Response) => {
     try {
@@ -159,12 +222,14 @@ export const staffLogin = async (req: Request, res: Response) => {
       // Send back the user profile data (exclude sensitive fields like password)
       const userProfile = {
         id: user._id,
-        displayName: user.displayName,
+        name: user.name,
+        businessName: user.businessName,
+        address: user.address,
         email: user.email,
         role: user.role,
         image: user.image,
         accessControls: user.accessControls,
-        // You can add other fields as necessary
+       
       };
   
       res.status(200).json({ message: 'User profile fetched successfully', user: userProfile });
@@ -185,20 +250,28 @@ export const staffLogin = async (req: Request, res: Response) => {
       }
   
       try {
-        const { displayName, email, password } = req.body; // Extract fields from request body
-        const user = req.user;  // This is set by the authenticateUser middleware
+        const { name, email,businessName,address, password } = req.body;
+        const user = req.user; 
   
         // Prepare an object to store the updated data
         const updatedUserData: any = {};
   
         // If displayName is provided, update it
-        if (displayName) {
-          updatedUserData.displayName = displayName;
+        if (name) {
+          updatedUserData.name = name;
         }
   
         // If email is provided, update it
         if (email) {
           updatedUserData.email = email;
+        }
+
+        if (businessName) {
+          updatedUserData.businessName = businessName;
+        }
+
+        if (address) {
+          updatedUserData.address = address;
         }
   
         // If password is provided, hash it and update
@@ -209,8 +282,8 @@ export const staffLogin = async (req: Request, res: Response) => {
   
         // If an image is uploaded, save the file path to the database
         if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
-          const files = req.files as { [fieldname: string]: Express.Multer.File[] }; // Explicitly cast req.files
-          const imagePath = '/uploads/image/' + files['image'][0].filename;  // Get image path from multer
+          const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+          const imagePath = '/uploads/image/' + files['image'][0].filename;  
           updatedUserData.image = imagePath;
         }
   
@@ -228,8 +301,10 @@ export const staffLogin = async (req: Request, res: Response) => {
         // Send the updated user data as a response (excluding password)
         const userProfile = {
           id: updatedUser._id,
-          displayName: updatedUser.displayName,
+          name: updatedUser.name,
           email: updatedUser.email,
+          businessName: updatedUser.businessName,
+          address: updatedUser.address,
           role: updatedUser.role,
           accessControls: updatedUser.accessControls,
           image: updatedUser.image || 'https://i.ibb.co/z5YHLV9/profile.png',  // Default image if not uploaded

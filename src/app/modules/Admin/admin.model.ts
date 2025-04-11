@@ -2,6 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAdmin extends Document {
   name: string;
+  businessName: string;
+  address: string;
   email: string;
   password: string;
   image?: string; // Optional field for image
@@ -15,6 +17,8 @@ export interface IAdmin extends Document {
 const AdminSchema = new Schema<IAdmin>(
   {
     name: { type: String, required: true },
+    businessName: { type: String, required: false },
+    address: { type: String, required: false },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     image: { type: String, default: null },

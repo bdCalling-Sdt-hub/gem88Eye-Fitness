@@ -1,11 +1,11 @@
-// src/app/controllers/invoice.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import Invoice from './invoice.model';
-import csvParser from 'csv-parser';  // A library for parsing CSV files
-import fs from 'fs'; // Used to handle file uploads
+import csvParser from 'csv-parser'; 
+import fs from 'fs'; 
 import Client from '../contact/client.model';
+import fileUploadHandler from '../../middlewares/fileUploadHandler';
 
-// Controller to create a single invoice
+
 export const createSingleInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { invoiceId, clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
   
@@ -15,7 +15,6 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
     }
   
     try {
-      // Fetch the client based on the client name
       const client = await Client.findOne({ client_name: clientName });
   
       if (!client) {
@@ -23,13 +22,11 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
          return
       }
   
-      // Ensure that we correctly assign the 'active' status from the client model
       const activeStatus = client.active;
   
-      // Create the new invoice, including the active status from the client
       const newInvoice = new Invoice({
         invoiceId,
-        client: clientName,  // Store client name in the invoice
+        client: clientName,
         className,
         contactName,
         services,
@@ -37,7 +34,7 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
         invoiceNumber,
         invoiceDate,
         invoiceDueDate,
-        active: activeStatus,  // Get the active status of the client
+        active: activeStatus, 
       });
   
       await newInvoice.save();
@@ -48,66 +45,146 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
         data: newInvoice,
       });
     } catch (err) {
-      next(err);  // Pass the error to the global error handler
+      next(err); 
     }
   };
-// Controller to create multiple invoices from a CSV file
-export const createMultipleInvoices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const file = req.file; // Access the uploaded file
 
-  if (!file) {
-     res.status(400).json({
-      success: false,
-      message: 'Please upload a CSV file.'
-      
-    });
-    return
-  }
+const uploadCSV = fileUploadHandler(); 
 
-  const invoices: any[] = [];
-
-  // Parse the CSV file
-  fs.createReadStream(file.path)
-    .pipe(csvParser())
-    .on('data', async (row: { invoiceId: any; client: any; className: any; contactName: any; services: any; invoiceTotal: any; invoiceNumber: any; invoiceDate: any; invoiceDueDate: any; }) => {
-      const { invoiceId, client, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = row;
-
-      const newInvoice = new Invoice({
-        invoiceId,
-        client,
-        className,
-        contactName,
-        services,
-        invoiceTotal: parseFloat(invoiceTotal),
-        invoiceNumber,
-        invoiceDate: new Date(invoiceDate),
-        invoiceDueDate: new Date(invoiceDueDate),
+export const createInvoicesFromCsv = (req: Request, res: Response, next: NextFunction): void => {
+  uploadCSV(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: 'File upload failed',
+        error: err.message,
       });
+    }
 
-      invoices.push(newInvoice);
-    })
-    .on('end', async () => {
+    const uploadedFile = (req as any).files['documents'][0]; 
+    const filePath = uploadedFile.path; 
+
+    const invoicesData: any[] = [];
+
+    const processCsv = async () => {
       try {
-        // Insert multiple invoices into the database
-        await Invoice.insertMany(invoices);
-        res.status(201).json({
+        const results = [];
+        const stream = fs.createReadStream(filePath)
+          .pipe(csvParser());
+
+        for await (const row of stream) {
+          const {
+            invoiceId,
+            clientName,
+            className,
+            contactName,
+            services,
+            invoiceTotal,
+            invoiceNumber,
+            invoiceDate,
+            invoiceDueDate,
+          } = row;
+
+          if (!invoiceId || !clientName || !className || !contactName || !services || !invoiceTotal || !invoiceNumber || !invoiceDate || !invoiceDueDate) {
+            console.error(`Invalid data in row: ${JSON.stringify(row)}`);
+            continue;
+          }
+
+          const client = await Client.findOne({ client_name: clientName });
+
+          if (!client) {
+            console.error(`Client not found for clientName: ${clientName}`);
+            continue;
+          }
+
+          const activeStatus = client.active;
+
+          const newInvoice = new Invoice({
+            invoiceId,
+            client: clientName, 
+            className,
+            contactName,
+            services,
+            invoiceTotal,
+            invoiceNumber,
+            invoiceDate,
+            invoiceDueDate,
+            active: activeStatus, 
+          });
+
+          await newInvoice.save();
+          invoicesData.push(newInvoice);
+        }
+
+        fs.unlinkSync(filePath);
+
+        res.status(200).json({
           success: true,
-          message: `${invoices.length} invoices created successfully!`
+          message: 'Invoices created successfully from CSV!',
+          data: invoicesData,  
         });
-      } catch (err) {
-        next(err);
+      } catch (error) {
+        fs.unlinkSync(filePath);  
+        return res.status(500).json({
+          success: false,
+          message: 'Error while processing CSV',
+          error: error,
+        });
       }
-    })
-    .on('error', (err: any) => {
-      next(err);
+    };
+
+    processCsv();
+  });
+};
+export const updateInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { invoiceId, clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
+
+  try {
+    // Find the invoice by invoiceId
+    const invoice = await Invoice.findOne({ invoiceId });
+
+    if (!invoice) {
+       res.status(404).json({ success: false, message: 'Invoice not found' });
+       return
+    }
+
+    // If the clientName is provided, find the client
+    if (clientName) {
+      const client = await Client.findOne({ client_name: clientName });
+      if (!client) {
+         res.status(404).json({ success: false, message: 'Client not found' });
+         return
+      }
+      invoice.client = clientName;  // Update the client name
+      invoice.active = client.active;  // Update active status
+    }
+
+    // Update only the fields that are provided in the request
+    if (className) invoice.className = className;
+    if (contactName) invoice.contactName = contactName;
+    if (services) invoice.services = services;
+    if (invoiceTotal) invoice.invoiceTotal = invoiceTotal;
+    if (invoiceNumber) invoice.invoiceNumber = invoiceNumber;
+    if (invoiceDate) invoice.invoiceDate = invoiceDate;
+    if (invoiceDueDate) invoice.invoiceDueDate = invoiceDueDate;
+
+    // Save the updated invoice
+    const updatedInvoice = await invoice.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Invoice updated successfully!',
+      data: updatedInvoice,
     });
+  } catch (err) {
+    next(err);  // Pass the error to the global error handler
+  }
 };
 
 
-//active-inactive
 export const updateInvoiceStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { invoiceId } = req.params;  // Get the invoice ID from the URL
-    const { active } = req.body;  // Get the new active status from the request body
+    const { invoiceId } = req.params; 
+    const { active } = req.body; 
   
     if (typeof active !== 'boolean') {
        res.status(400).json({
@@ -119,11 +196,11 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
     }
   
     try {
-      // Find the invoice by ID and update the active status
+
       const updatedInvoice = await Invoice.findByIdAndUpdate(
-        invoiceId, // Find by invoice ID
-        { active },  // Update active status
-        { new: true }  // Return the updated invoice
+        invoiceId,
+        { active }, 
+        { new: true } 
       );
   
       if (!updatedInvoice) {
@@ -140,14 +217,13 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
         data: updatedInvoice
       });
     } catch (err) {
-      next(err);  // Pass the error to the global error handler
+      next(err); 
     }
   };
 
   export const getInvoicesByStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { status } = req.query;  // Get the status (active/inactive) from the query string
+    const { status } = req.query; 
   
-    // Ensure the status is a valid value
     if (status && status !== 'true' && status !== 'false') {
        res.status(400).json({
         success: false,
@@ -157,12 +233,10 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
     }
   
     try {
-      // If status is provided, filter invoices based on the active status
       const invoices = await Invoice.find({
-        active: status ? JSON.parse(status) : undefined  // If status is passed, filter by status
+        active: status ? JSON.parse(status) : undefined, 
       });
   
-      // If no invoices are found
       if (invoices.length === 0) {
          res.status(404).json({
           success: false,
@@ -170,13 +244,12 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
         });
       }
   
-      // Return the filtered invoices
       res.status(200).json({
         success: true,
         message: 'Invoices fetched successfully!',
         data: invoices
       });
     } catch (err) {
-      next(err);  // Pass the error to the global error handler
+      next(err); 
     }
   };

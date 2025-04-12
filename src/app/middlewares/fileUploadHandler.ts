@@ -82,12 +82,13 @@ const fileUploadHandler = () => {
         );
       }
     } else if (file.fieldname === 'documents') {
-      if (file.mimetype === 'application/pdf') {
-        cb(null, true);
+      if (file.mimetype === 'application/pdf' || file.mimetype === 'text/csv') {
+        cb(null, true); // Allow both PDFs and CSV files
       } else {
-        cb(new ApiError(StatusCodes.BAD_REQUEST, 'Only pdf supported'));
+        cb(new ApiError(StatusCodes.BAD_REQUEST, 'Only pdf or csv files supported'));
       }
-    } else {
+    }
+     else {
       cb(new ApiError(StatusCodes.BAD_REQUEST, 'This file is not supported'));
     }
   };

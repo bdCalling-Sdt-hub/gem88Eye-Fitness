@@ -31,8 +31,8 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
     totalCapacity,
     frequency,
     workType,
-    leadId,       // Added field for the lead
-    staffId,      // Added field for the staff
+    leadId,       
+    staffId,      
   } = req.body;
 
   // Validate required fields
@@ -123,7 +123,7 @@ const times = [
   new Date(classDateTime.getTime() - 60 * 60 * 1000),
 ];
 
-scheduleNotification(lead._id as string, `Reminder: Class "${name}" at ${location}`, times, 'Class', io);
+scheduleNotification(lead._id as string, `Reminder: Class "${name}" at ${location}`, times, 'Class', io, 'Staff');
 
 
     // Populate lead and staff details in the response

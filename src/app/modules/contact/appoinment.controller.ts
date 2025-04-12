@@ -106,19 +106,31 @@ export const bookAppointment = async (
 
     await newAppointment.save();
 
-    // Schedule notifications
+    // Schedule notifications for both client and staff
     const io = req.app.get('io');
     const times = [
       new Date(appointmentDateTime.getTime() - 24 * 60 * 60 * 1000), // 1 day before
       new Date(appointmentDateTime.getTime() - 60 * 60 * 1000), // 1 hour before
     ];
 
+    // Client notification
     scheduleNotification(
       client._id as string,
       `Reminder: Appointment for ${service}`,
       times,
       'Appointment',
-      io
+      io,
+      'Admin' 
+    );
+
+    // Staff notification
+    scheduleNotification(
+      staff._id as string,
+      `Reminder: You have an appointment for ${service} with ${contactName}`,
+      times,
+      'Appointment',
+      io,
+      'Staff'
     );
 
     res.status(201).json({
@@ -130,6 +142,7 @@ export const bookAppointment = async (
     next(err);
   }
 };
+
 
 export const updateAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { appointmentId } = req.params;  // Get appointmentId from URL parameters

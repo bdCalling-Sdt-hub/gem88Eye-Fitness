@@ -6,6 +6,7 @@ import Client from './client.model';            // Import Client model
 import Staff from '../staff/staff.model';              // Import Staff model
 import Lead from './leads.model';                // Import Lead model
 import { scheduleNotification } from '../../../util/scheduleNotification';
+import moment from 'moment';
 
 // Controller to book an appointment
 // export const bookAppointment = async (req: Request<{}, {}, AppointmentRequestBody>, res: Response, next: NextFunction): Promise<void> => {
@@ -215,7 +216,56 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
       next(err);
     }
   };
-
+  export const getAppointmentStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Fetch all appointments
+      const allAppointments = await Appointment.find();
+  
+      // If no appointments found
+      if (!allAppointments || allAppointments.length === 0) {
+         res.status(404).json({
+          success: false,
+          message: 'No appointments found.',
+        });
+      }
+  
+      // Get current date and time for comparison
+      const currentDateTime = moment();
+  
+      // Initialize arrays for different appointment types
+      const completedAppointments: any[] = [];
+      const upcomingAppointments: any[] = [];
+  
+      // Iterate through all appointments and categorize them
+      allAppointments.forEach((appointment) => {
+        const appointmentDateTime = moment(`${appointment.date}T${appointment.time}`);
+  
+        // Check if the appointment is completed (date has passed)
+        if (appointmentDateTime.isBefore(currentDateTime)) {
+          completedAppointments.push(appointment);
+        }
+        // Check if the appointment is upcoming (date is in the future)
+        else {
+          upcomingAppointments.push(appointment);
+        }
+      });
+  
+      // Return response with the statistics
+      res.status(200).json({
+        success: true,
+        message: 'Appointments categorized successfully.',
+        data: {
+          totalAppointments: allAppointments.length,
+          completedAppointments: completedAppointments.length,
+          upcomingAppointments: upcomingAppointments.length,
+          completedAppointmentsDetails: completedAppointments,
+          upcomingAppointmentsDetails: upcomingAppointments,
+        },
+      });
+    } catch (err) {
+      next(err); // Pass any errors to the global error handler
+    }
+  };
   export const deleteAppoinment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const appointmentId = req.params.id;  // Get the client ID from the URL
   

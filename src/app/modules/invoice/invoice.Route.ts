@@ -11,7 +11,7 @@ invoiceRoutes.post('/single', createSingleInvoice);
 
 invoiceRoutes.post('/multiple', createInvoicesFromCsv); 
 invoiceRoutes.put('/status/:invoiceId', updateInvoiceStatus);
-invoiceRoutes.get('/', getInvoicesByStatus);
+invoiceRoutes.get('', getInvoicesByStatus);
 invoiceRoutes.get('/csv/download', downloadAllInvoicesCSV);
 invoiceRoutes.put('/update/:invoiceId',updateInvoice);
 

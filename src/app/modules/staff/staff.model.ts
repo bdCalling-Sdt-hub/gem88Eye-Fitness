@@ -26,7 +26,8 @@ const StaffSchema = new Schema<IStaff>(
         return new Date(this.expiryDate) > new Date() ? "valid" : "invalid";
       },
     },
-    role: { type: String, required: false, default: "staff" }, // Default role is "staff"
+  
+    role: { type: String, required: false, default: "staff" },
     image: { type: String, required: false },
     createdAt: { type: Date, default: Date.now },
   },

@@ -10,6 +10,4 @@ StaffRoutes.put("/update/:staffId", authenticateAdmin ,editStaff);
 StaffRoutes.delete("/delete/:staffId", authenticateAdmin, deleteStaff);
 StaffRoutes.get("/all", authenticateAdmin, getAllStaff);
 
-
-
 export default StaffRoutes;

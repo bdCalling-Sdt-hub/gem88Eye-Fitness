@@ -218,12 +218,15 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
 
 // export const getLeadById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //   const { leadId } = req.params; // Extract leadId from URL params
+//   const { filter } = req.query; // Get the filter query parameter (upcoming or past)
 
 //   try {
 //     // Fetch the lead from the database using the provided leadId
 //     const lead = await Lead.findById(leadId)
-//       .populate('staff', 'name')  // Optionally populate related staff data
-//       .populate('lead', 'lead_name');  // Optionally populate related lead data
+//       .populate('staff', 'name')  
+//       .populate('lead', 'lead_name') 
+
+      
 
 //     // Check if the lead was found
 //     if (!lead) {
@@ -231,26 +234,69 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
 //       return;
 //     }
 
-//     // Return the lead data in the response
+//     // Fetch the appointments and classes for the lead
+//     const appointments = await Appointment.find({ lead: leadId });
+//     const classes = await Class.find({ lead: leadId })
+//     .populate('lead', 'lead_name')
+//     .populate('staff', 'name')
+//     .populate('schedule', 'date');
+
+//     if (appointments.length === 0 && classes.length === 0) {
+//       res.status(404).json({ success: false, message: 'No appointments or classes found for this lead' });
+//       return;
+//     }
+
+//     // Get the current date/time for filtering
+//     const currentDate = new Date();
+
+//     let filteredAppointments = appointments;
+//     let filteredClasses = classes;
+
+//     if (filter) {
+//       // Apply filtering based on the "filter" query parameter
+//       if (filter === 'upcoming') {
+//         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
+//         filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) > currentDate);
+//       } else if (filter === 'past') {
+//         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) <= currentDate);
+//         filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) <= currentDate);
+//       } else {
+//          res.status(400).json({
+//           success: false,
+//           message: 'Invalid filter type. Use "upcoming" or "past".',
+//         });
+//       }
+//     } else {
+//       filteredAppointments = appointments;
+//       filteredClasses = classes;
+//     }
+
+//     const responseData = {
+//       lead,
+//       upcomingAppointments: filteredAppointments,
+//       pastAppointments: filteredAppointments,
+//       upcomingClasses: filteredClasses,
+//       pastClasses: filteredClasses,
+//     };
+
 //     res.status(200).json({
 //       success: true,
-//       message: 'Lead retrieved successfully',
-//       data: lead,
+//       message: 'Lead profile with filtered appointments and classes retrieved successfully',
+//       data: responseData,
 //     });
 //   } catch (err) {
-//     next(err); // Pass the error to the error-handling middleware
+//     next(err); 
 //   }
 // };
-
 export const getLeadById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { leadId } = req.params; // Extract leadId from URL params
-  const { filter } = req.query; // Get the filter query parameter (upcoming or past)
+  const { filter } = req.query;  // Get the filter query parameter (upcoming or past)
 
   try {
     // Fetch the lead from the database using the provided leadId
     const lead = await Lead.findById(leadId)
-      .populate('staff', 'name')  // Optionally populate related staff data
-      .populate('lead', 'lead_name');  // Optionally populate related lead data
+      .populate('staff', 'name')  // Populate staff field in lead (staff name)
+      .populate('lead', 'lead_name');  // Populate lead field in lead (lead name)
 
     // Check if the lead was found
     if (!lead) {
@@ -258,53 +304,74 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    // Fetch the appointments and classes for the lead
-    const appointments = await Appointment.find({ lead: leadId });
-    const classes = await Class.find({ lead: leadId });
+    // Fetch appointments for the lead and populate the staff and lead fields
+    const appointments = await Appointment.find({ lead: leadId })
+      .populate('staff', 'name')
+      .populate('lead', 'lead_name');
 
-    // Get the current date/time for filtering
+    // Fetch classes for the lead and populate the staff, lead, and schedule fields
+    const classes = await Class.find({ lead: leadId })
+      .populate('staff', 'name')
+      .populate('lead', 'lead_name')
+      .populate('schedule', 'date');  // Populate schedule.date to access individual session dates
+
+    // If there are no appointments or classes, return a 404 error
+    if (appointments.length === 0 && classes.length === 0) {
+      res.status(404).json({ success: false, message: 'No appointments or classes found for this lead' });
+      return;
+    }
+
     const currentDate = new Date();
 
-    // Filter appointments and classes based on filter query
+    // Initialize filtered arrays for appointments and classes
     let filteredAppointments = appointments;
     let filteredClasses = classes;
 
+    // Apply filtering if the "filter" query parameter is provided
     if (filter) {
-      // Apply filtering based on the "filter" query parameter
       if (filter === 'upcoming') {
+        // Filter upcoming appointments based on date
         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
-        filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) > currentDate);
+
+        // Filter upcoming classes based on each session's date
+        filteredClasses = classes.filter((classItem) => {
+          return classItem.schedule.some(session => new Date(session.date) > currentDate);
+        });
       } else if (filter === 'past') {
+        // Filter past appointments based on date
         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) <= currentDate);
-        filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) <= currentDate);
+
+        // Filter past classes based on each session's date
+        filteredClasses = classes.filter((classItem) => {
+          return classItem.schedule.every(session => new Date(session.date) <= currentDate);
+        });
       } else {
-         res.status(400).json({
+        // Return an error if the filter type is invalid
+        res.status(400).json({
           success: false,
           message: 'Invalid filter type. Use "upcoming" or "past".',
         });
+        return;
       }
-    } else {
-      // If no filter is provided, return all appointments and classes
-      filteredAppointments = appointments;
-      filteredClasses = classes;
     }
 
-    // Prepare the response data
+    // Construct the response data
     const responseData = {
       lead,
       upcomingAppointments: filteredAppointments,
-      pastAppointments: filteredAppointments,
+      pastAppointments: filteredAppointments,  // Same array for both upcoming and past, just filtered by date
       upcomingClasses: filteredClasses,
-      pastClasses: filteredClasses,
+      pastClasses: filteredClasses,  // Same array for both upcoming and past, just filtered by date
     };
 
+    // Return the filtered data as the response
     res.status(200).json({
       success: true,
       message: 'Lead profile with filtered appointments and classes retrieved successfully',
       data: responseData,
     });
   } catch (err) {
-    next(err);  // Pass the error to the error-handling middleware
+    next(err);  // Pass any errors to the global error handler
   }
 };
 

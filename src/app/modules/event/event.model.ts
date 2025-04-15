@@ -5,12 +5,12 @@ interface IEvent extends Document {
   location: string;
   startTime: string;
   duration: number; 
-  workType: 'online' | 'offline';  // Work type (default: 'offline')
+  workType: 'online' | 'offline'; 
   frequency: 'Once' | 'Bi-Weekly';
   eventDate: Date;
   totalCapacity: number;
-  staff: Schema.Types.ObjectId;  // Reference to staff
-  status: 'active' | 'inactive'; // Event status (default: 'active')
+  staff: Schema.Types.ObjectId; 
+  status: 'active' | 'inactive'; 
 }
 
 const eventSchema = new Schema<IEvent>({

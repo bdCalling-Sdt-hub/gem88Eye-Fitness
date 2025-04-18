@@ -46,32 +46,27 @@ export const assignRole = async (req: Request, res: Response) => {
   try {
     const { name, email, role, accessControls } = req.body;
 
-    // ✅ Check if the user already has a role
     const existingRole = await Role.findOne({ email });
     if (existingRole) {
       return res.status(400).json({ message: "User already has a role assigned" });
     }
 
-    // ✅ Default accessControls (all pages)
     const defaultAccessControls = [
       "calendar", "services", "invoice", "contact", 
       "reports", "payroll-reporting", "settings"
     ];
 
-    // If accessControls is provided, set it to the selected pages (merge with default)
     let finalAccessControls = accessControls && Array.isArray(accessControls)
-      ? accessControls.filter(page => defaultAccessControls.includes(page)) // Filter to make sure we only allow valid pages
+      ? accessControls.filter(page => defaultAccessControls.includes(page)) 
       : [];
 
-    // ✅ Create new role entry with selected accessControls
     const newRole = await Role.create({
       name,
       email,
       role,
-      accessControls: finalAccessControls.length ? finalAccessControls : defaultAccessControls, // If no selection, default to all
+      accessControls: finalAccessControls.length ? finalAccessControls : defaultAccessControls, 
     });
 
-    // ✅ Send email notification
     const emailContent = {
       to: email,
       subject: "New Role Assigned to Your Account",

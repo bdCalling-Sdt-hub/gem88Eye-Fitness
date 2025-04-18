@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import Class from './class.model'; 
 import Lead from '../contact/leads.model';
 import Staff from '../staff/staff.model';
-import { scheduleNotification } from '../../../util/scheduleNotification';
+
+import  {scheduleNotification}  from '../../../util/scheduleNotification';
 import moment from 'moment';
-import { Location } from '../Admin/location.model'; // Assuming you have a Location model
+import { Location } from '../Admin/location.model';
+import Admin from '../Admin/admin.model';
+import Notification from '../notification/notification.model';
+import { string } from 'zod';
+import mongoose from 'mongoose';
 export const getPredefinedClassNames = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const classNames = await Class.find().select('name');
@@ -23,8 +28,8 @@ export const getPredefinedClassNames = async (req: Request, res: Response, next:
 // export const createClass = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //   const {
 //     name,
-//     location,
-//     schedule, // Expecting the schedule to include dates and sessions
+//     locationId,
+//     schedule,
 //     totalCapacity,
 //     frequency,
 //     workType,
@@ -33,38 +38,44 @@ export const getPredefinedClassNames = async (req: Request, res: Response, next:
 //   } = req.body;
 
 //   try {
-//     // Validate required fields
-//     if (!name || !location || !schedule || !totalCapacity || !frequency || !workType || !leadId || !staffId) {
-//        res.status(400).json({
+//     if (!name || !locationId || !schedule || !totalCapacity || !frequency || !workType || !leadId || !staffId) {
+//       res.status(400).json({
 //         success: false,
-//         message: 'Please provide all required fields (name, location, schedule, totalCapacity, frequency, workType, leadId, staffId)',
+//         message: 'Please provide all required fields (name, locationId, schedule, totalCapacity, frequency, workType, leadId, staffId)',
 //       });
+//       return;
 //     }
 
-//     // Validate each session in the schedule
 //     schedule.forEach((item: any) => {
 //       if (!item.date || !Array.isArray(item.sessions) || item.sessions.length === 0) {
 //         throw new Error(`Invalid session data for date: ${item.date}`);
 //       }
 //     });
 
-//     // Fetch lead and staff from their IDs
 //     const lead = await Lead.findById(leadId);
 //     const staff = await Staff.findById(staffId);
 
 //     if (!lead || !staff) {
-//        res.status(400).json({
+//       res.status(400).json({
 //         success: false,
 //         message: 'Lead or Staff not found.',
 //       });
 //       return;
 //     }
 
-//     // Create a new class instance
+//     const location = await Location.findById(locationId);
+//     if (!location) {
+//       res.status(400).json({
+//         success: false,
+//         message: 'Location not found.',
+//       });
+//       return;
+//     }
+
 //     const newClass = new Class({
 //       name,
-//       location,
-//       schedule,  
+//       location: location._id,
+//       schedule,
 //       totalCapacity,
 //       frequency,
 //       workType,
@@ -72,24 +83,34 @@ export const getPredefinedClassNames = async (req: Request, res: Response, next:
 //       staff: staff._id,
 //     });
 
-//     // Save the new class to the database
 //     const savedClass = await newClass.save();
 
-//     // Return the response with the saved class
+//     // Create notifications for the staff and lead
+//     const notificationMessage = `You have been assigned to a new class: ${name}`;
+//     const notificationDate = new Date(); // Adjust the scheduled time as needed
+
+//     const notificationData = [
+//       { userId: lead._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Class' },
+//       { userId: staff._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Class' }
+//     ];
+
+//     await Notification.insertMany(notificationData);
+
 //     res.status(201).json({
 //       success: true,
-//       message: 'Class created successfully!',
+//       message: 'Class created and notifications sent!',
 //       data: savedClass,
 //     });
 //   } catch (err) {
-//     next(err); // Pass the error to the error handler
+//     next(err);
 //   }
 // };
+
 export const createClass = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const {
     name,
-    locationId,  
-    schedule, 
+    locationId,
+    schedule,
     totalCapacity,
     frequency,
     workType,
@@ -99,23 +120,24 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
 
   try {
     if (!name || !locationId || !schedule || !totalCapacity || !frequency || !workType || !leadId || !staffId) {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Please provide all required fields (name, locationId, schedule, totalCapacity, frequency, workType, leadId, staffId)',
       });
+      return;
     }
+
     schedule.forEach((item: any) => {
       if (!item.date || !Array.isArray(item.sessions) || item.sessions.length === 0) {
         throw new Error(`Invalid session data for date: ${item.date}`);
       }
     });
 
-
     const lead = await Lead.findById(leadId);
     const staff = await Staff.findById(staffId);
 
     if (!lead || !staff) {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Lead or Staff not found.',
       });
@@ -124,7 +146,7 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
 
     const location = await Location.findById(locationId);
     if (!location) {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Location not found.',
       });
@@ -133,8 +155,8 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
 
     const newClass = new Class({
       name,
-      location: location._id,  
-      schedule,  
+      location: location._id,
+      schedule,
       totalCapacity,
       frequency,
       workType,
@@ -142,21 +164,41 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
       staff: staff._id,
     });
 
-
     const savedClass = await newClass.save();
 
-    const populatedClass = await savedClass.populate('location');
+    // Create notifications for the staff and lead
+    const notificationMessage = `You have been assigned to a new class: ${name}`;
+    const notificationDate = new Date(); // Adjust the scheduled time as needed
 
+    const notificationData = [
+      {
+        userId: lead._id, 
+        userModel: 'Lead',  // Set the userModel as 'Lead' for the lead
+        message: notificationMessage, 
+        scheduledTime: notificationDate, 
+        type: 'Class'
+      },
+      {
+        userId: staff._id, 
+        userModel: 'Staff',  // Set the userModel as 'Staff' for the staff
+        message: notificationMessage, 
+        scheduledTime: notificationDate, 
+        type: 'Class'
+      }
+    ];
 
-     res.status(201).json({
+    await Notification.insertMany(notificationData);
+
+    res.status(201).json({
       success: true,
-      message: 'Class created successfully!',
-      data: populatedClass,
+      message: 'Class created and notifications sent!',
+      data: savedClass,
     });
   } catch (err) {
-    next(err); 
+    next(err);
   }
 };
+
 
 export const updateClass = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { classId } = req.params;
@@ -184,12 +226,11 @@ export const updateClass = async (req: Request, res: Response, next: NextFunctio
 
     if (name) classToUpdate.name = name;
     if (location) classToUpdate.location = location;
-    if (schedule) classToUpdate.schedule = schedule;  // Update the entire schedule with multiple sessions
+    if (schedule) classToUpdate.schedule = schedule; 
     if (totalCapacity) classToUpdate.totalCapacity = totalCapacity;
     if (frequency) classToUpdate.frequency = frequency;
     if (workType) classToUpdate.workType = workType;
 
-    // Update lead
     if (leadId) {
       const lead = await Lead.findById(leadId);
       if (lead) classToUpdate.lead = lead._id as typeof classToUpdate.lead;
@@ -326,12 +367,43 @@ export const getClassById = async (req: Request, res: Response, next: NextFuncti
     next(err);  // Pass any errors to the global error handler
   }
 };
+
 // export const getClassStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //   try {
-//     // Fetch all classes with populated data
-//     const allClasses = await Class.find()
-//       .populate('lead', 'lead_name')
-//       .populate('staff', 'name');
+//     const { staff, location, className, date, status } = req.query; 
+//     const filter: any = {};  
+
+//     if (staff) {
+//       filter['staff'] = staff;
+//     }
+
+  
+//     if (location) {
+//       filter['location'] = { $regex: location, $options: 'i' }; 
+//     }
+
+//     if (className) {
+//       filter['name'] = { $regex: className, $options: 'i' };
+//     }
+
+//     if (date) {
+//       const selectedDate = moment(typeof date === 'string' ? date : '').startOf('day');
+//       filter['schedule.date'] = { $gte: selectedDate.toDate() };
+//     }
+
+//     if (status) {
+//       if (status === 'running') {
+//         filter['status'] = 'active';
+//       } else if (status === 'not running') {
+//         filter['status'] = 'inactive';
+//       }
+//     }
+
+//     const allClasses = await Class.find(filter)
+//       .populate('lead', 'lead_name') 
+//       .populate('staff', 'name') 
+//       .populate('location', 'locationName') 
+//       .exec();
 
 //     if (!allClasses || allClasses.length === 0) {
 //       res.status(404).json({
@@ -343,82 +415,87 @@ export const getClassById = async (req: Request, res: Response, next: NextFuncti
 
 //     const currentDate = moment();
 
-//     const completedClasses: any[] = [];
-//     const runningClasses: any[] = [];
-//     const notRunningClasses: any[] = [];
+//     let runningClassesCount = 0;
+//     let completedClassesCount = 0;
+//     let notRunningClassesCount = 0;
 
-//     // Iterate through all classes to categorize based on session dates
 //     allClasses.forEach((classItem) => {
-//       // Iterate through each session in the schedule array
 //       classItem.schedule.forEach((session) => {
-//         const sessionDate = moment(session.date);  // Convert session date to moment
-//         const isClassActive = classItem.status === 'active';  // Check if class is active
+//         const sessionDate = moment(session.date); 
+//         const isClassActive = classItem.status === 'active'; 
 
-//         // Check if session date is in the past and class is inactive (completed class)
 //         if (sessionDate.isBefore(currentDate) && !isClassActive) {
-//           completedClasses.push(classItem);
+//           completedClassesCount++;
 //         }
-//         // Check if class is active and session date is in the future or ongoing (running class)
+
 //         else if (isClassActive && sessionDate.isSameOrAfter(currentDate)) {
-//           runningClasses.push(classItem);
+//           runningClassesCount++;
 //         }
-//         // If class is inactive and session date is in the future (not running class)
+
 //         else if (!isClassActive && sessionDate.isSameOrAfter(currentDate)) {
-//           notRunningClasses.push(classItem);
+//           notRunningClassesCount++;
 //         }
 //       });
 //     });
 
-//     // Return response with class statistics
 //     res.status(200).json({
 //       success: true,
-//       message: 'Classes categorized successfully.',
+//       message: 'Classes fetched successfully.',
 //       data: {
 //         totalClasses: allClasses.length,
-//         completedClasses: completedClasses.length,
-//         runningClasses: runningClasses.length,
-//         notRunningClasses: notRunningClasses.length,
-//         completedClassesData: completedClasses, 
-//         runningClassesData: runningClasses,     
-//         notRunningClassesData: notRunningClasses,
+//         runningClassesCount,
+//         completedClassesCount,
+//         notRunningClassesCount,
+//         classesData: allClasses, 
 //       },
 //     });
 //   } catch (err) {
-//     next(err);  // Pass any errors to the global error handler
+//     next(err); 
 //   }
 // };
-
 export const getClassStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { staff, location, className, date } = req.query; // Extract query parameters for filtering
-    const filter: any = {};  // Initialize filter object
+    const { filter, status, date, location, staff, className,lead } = req.query;
+    const filterQuery: any = {}; // Query filter object
 
-    // Filter by staff name or staff ID
-    if (staff) {
-      filter['staff'] = staff; // If staff is provided, filter by staff ID or name (depending on the requirement)
+    console.log('Received filters:', req.query);
+
+    if (filter) {
+      const filterText = filter.toString().trim();
+
+      // Apply regex only on string fields
+      filterQuery['name'] = { $regex: filterText, $options: 'i' }; 
+      filterQuery['description'] = { $regex: filterText, $options: 'i' }; 
+
+      // Apply regex on `staff.name` if `staff` is an ObjectId reference (assuming 'staff' has a 'name' field)
+      filterQuery['staff.name'] = { $regex: filterText, $options: 'i' };
+
+      // Apply regex on `location.locationName` if `location` is an ObjectId reference (assuming 'location' has a 'locationName' field)
+      filterQuery['location.locationName'] = { $regex: filterText, $options: 'i' };
     }
 
-    // Filter by location
-    if (location) {
-      filter['location'] = { $regex: location, $options: 'i' }; // Case-insensitive regex search for location
+    if (status) {
+      if (status === 'running') {
+        filterQuery['status'] = 'active';
+      } else if (status === 'not running') {
+        filterQuery['status'] = 'inactive';
+      }
     }
 
-    // Filter by class name
-    if (className) {
-      filter['name'] = { $regex: className, $options: 'i' }; // Case-insensitive regex search for class name
-    }
-
-    // Filter by date range (e.g., today, this week, etc.)
     if (date) {
-      const selectedDate = moment(typeof date === 'string' ? date : '').startOf('day'); // Normalize the date to start of day
-
-      filter['schedule.date'] = { $gte: selectedDate.toDate() }; // Filter by classes occurring on or after the given date
+      const selectedDate = moment(typeof date === 'string' ? date : '').startOf('day');
+      filterQuery['schedule.date'] = { $gte: selectedDate.toDate() };
     }
 
-    // Fetch all classes with populated data based on the filters
-    const allClasses = await Class.find(filter)
+    console.log('Constructed filter query:', filterQuery);
+
+    const allClasses = await Class.find(filterQuery)
       .populate('lead', 'lead_name')
-      .populate('staff', 'name');
+      .populate('staff', 'name') // Assuming you want the 'name' field from the 'staff' reference
+      .populate('location', 'locationName') // Assuming you want the 'locationName' field from the 'location' reference
+      .exec();
+
+    console.log('Classes fetched:', allClasses);
 
     if (!allClasses || allClasses.length === 0) {
       res.status(404).json({
@@ -429,51 +506,42 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
     }
 
     const currentDate = moment();
+    let runningClassesCount = 0;
+    let completedClassesCount = 0;
+    let notRunningClassesCount = 0;
 
-    const completedClasses: any[] = [];
-    const runningClasses: any[] = [];
-    const notRunningClasses: any[] = [];
-
-    // Iterate through all classes to categorize based on session dates
     allClasses.forEach((classItem) => {
-      // Iterate through each session in the schedule array
       classItem.schedule.forEach((session) => {
-        const sessionDate = moment(session.date);  // Convert session date to moment
-        const isClassActive = classItem.status === 'active';  // Check if class is active
+        const sessionDate = moment(session.date);
+        const isClassActive = classItem.status === 'active';
 
-        // Check if session date is in the past and class is inactive (completed class)
         if (sessionDate.isBefore(currentDate) && !isClassActive) {
-          completedClasses.push(classItem);
-        }
-        // Check if class is active and session date is in the future or ongoing (running class)
-        else if (isClassActive && sessionDate.isSameOrAfter(currentDate)) {
-          runningClasses.push(classItem);
-        }
-        // If class is inactive and session date is in the future (not running class)
-        else if (!isClassActive && sessionDate.isSameOrAfter(currentDate)) {
-          notRunningClasses.push(classItem);
+          completedClassesCount++;
+        } else if (isClassActive && sessionDate.isSameOrAfter(currentDate)) {
+          runningClassesCount++;
+        } else if (!isClassActive && sessionDate.isSameOrAfter(currentDate)) {
+          notRunningClassesCount++;
         }
       });
     });
 
-    // Return response with class statistics
     res.status(200).json({
       success: true,
-      message: 'Classes categorized successfully.',
+      message: 'Classes fetched successfully.',
       data: {
         totalClasses: allClasses.length,
-        completedClasses: completedClasses.length,
-        runningClasses: runningClasses.length,
-        notRunningClasses: notRunningClasses.length,
-        completedClassesData: completedClasses, 
-        runningClassesData: runningClasses,     
-        notRunningClassesData: notRunningClasses,
+        runningClassesCount,
+        completedClassesCount,
+        notRunningClassesCount,
+        classesData: allClasses,
       },
     });
   } catch (err) {
-    next(err);  // Pass any errors to the global error handler
+    console.error('Error occurred:', err);
+    next(err);
   }
 };
+
 
 export const updateClassStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { classId } = req.params; 
@@ -537,3 +605,75 @@ export const updateClassStatus = async (req: Request, res: Response, next: NextF
       next(err); 
     }
   };
+
+  // const createAdminNotifications = async (appointment: any, p0: string, firstClassDate: Date, p1: any) => {
+  //   try {
+  //     // Fetch all admins
+  //     const admins = await Admin.find();
+  
+  //     // Check if there are any admins
+  //     if (admins.length === 0) {
+  //       throw new Error('No admins found to send notifications');
+  //     }
+  
+  //     // Prepare notification message and other fields
+  //     const notificationMessage = `A new ${p0} has been booked for service: ${appointment.name} with lead: ${appointment.leadId}`;
+  //     const notificationDate = new Date();  // Current date
+  
+  //     // Prepare notification data for all admins
+  //     const notificationData = admins.map(admin => ({
+  //       userId: admin._id,  // admin._id as the userId for the Admin user
+  //       // Specify that the userModel is Admin
+  //       message: notificationMessage,
+  //       scheduledTime: notificationDate,
+  //       type: p0  // Type can be 'Appointment' or 'Class'
+  //     }));
+  
+  //     // Insert notifications into the database
+  //     await Notification.insertMany(notificationData);
+  
+  //     console.log(`Admin notifications created for ${admins.length} admins`);
+  
+  //   } catch (err) {
+  //     console.error('Error creating admin notifications:', err);
+  //     throw new Error('Error creating admin notifications: ' + err);
+  //   }
+  // };
+  
+  // const createAdminNotifications = async (appointment: any, p0: string, firstClassDate: Date, p1: any) => {
+  //   try {
+  //     // Fetch all admins
+  //     const admins = await Admin.find();
+  
+  //     // Check if there are any admins
+  //     if (admins.length === 0) {
+  //       throw new Error('No admins found to send notifications');
+  //     }
+  
+  //     // Prepare notification message and other fields
+  //     const notificationMessage = `A new ${p0} has been booked for service: ${appointment.name} with lead: ${appointment.leadId}`;
+  //     const notificationDate = new Date();  // Current date
+  
+  //     // Prepare notification data for all admins
+  //     const notificationData = admins.map(admin => ({
+  //       userId: admin._id,  // admin._id as the userId for the Admin user
+  //       userModel: 'Admin',  // Specify that the userModel is Admin
+  //       message: notificationMessage,
+  //       scheduledTime: notificationDate,
+  //       type: p0  // Type can be 'Appointment' or 'Class'
+  //     }));
+  
+  //     // Insert notifications into the database
+  //     await Notification.insertMany(notificationData);
+  
+  //     console.log(`Admin notifications created for ${admins.length} admins`);
+  
+  //   } catch (err) {
+  //     console.error('Error creating admin notifications:', err);
+  //     throw new Error('Error creating admin notifications: ' + err);
+  //   }
+  // };
+  
+  
+  
+  

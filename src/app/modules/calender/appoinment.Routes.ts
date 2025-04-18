@@ -1,12 +1,13 @@
 
 import express from 'express';
-import {  bookAppointment, getAllAppointments } from './appoinment';
+import {  bookAppointment, getAllAppointments, getFilteredData } from './appoinment';
 
-const AppointmentRoutes = express.Router();
+const CalendarRoutes = express.Router();
 
 // AppointmentRoutes.get('/all', getAllAppointments);
-AppointmentRoutes.post('/book', bookAppointment);
-AppointmentRoutes.post('/all', getAllAppointments);
+CalendarRoutes.post('/book', bookAppointment);
+CalendarRoutes.get('/all', getAllAppointments);
+CalendarRoutes.get('/allFillter', getFilteredData);
 
-export default AppointmentRoutes;
+export default CalendarRoutes;
 

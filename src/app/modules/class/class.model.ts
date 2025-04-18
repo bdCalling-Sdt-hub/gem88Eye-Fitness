@@ -101,6 +101,28 @@ const classSchema = new Schema<IClass>({
   lead: { type: Schema.Types.ObjectId, ref: 'Lead', required: true },  
   staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true }
 }, { timestamps: true });
+// const classSchema = new Schema<IClass>({
+//   name: { type: String, required: true },
+//   location: { type: Schema.Types.ObjectId, ref: 'Location', required: true },
+//   schedule: [
+//     {
+//       date: { type: String, required: true }, 
+//       sessions: [
+//         {
+//           startTime: { type: String, required: true }, 
+//           duration: { type: Number, required: true } 
+//         }
+//       ]
+//     }
+//   ],
+//   totalCapacity: { type: Number, required: true },
+//   frequency: { type: String, enum: ['Once', 'Weekly', 'Bi-Weekly', 'Monthly'], required: true },
+//   workType: { type: String, enum: ['online', 'offline'], required: true },  
+//   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+//   lead: { type: Schema.Types.ObjectId, ref: 'Lead', required: true },  
+//   staff: { type: Schema.Types.ObjectId, ref: 'Staff', required: true }
+// }, { timestamps: true });
+
 
 const Class = model<IClass>('Class', classSchema);
 

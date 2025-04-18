@@ -1,6 +1,7 @@
 import express from 'express';
 import { getAllAppointments, bookAppointment, updateAppointment, deleteAppoinment, getAppointmentStats } from './appoinment.controller';
 import { authenticateUser } from '../../middlewares/auth';
+import { getFilteredData } from '../calender/appoinment';
 
 const AppointmentRoutes = express.Router();
 AppointmentRoutes.get('/all', getAllAppointments);

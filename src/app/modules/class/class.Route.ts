@@ -10,7 +10,7 @@ ClassRoutes.get('/get', getAllClasses);
 ClassRoutes.get('/getstates', getClassStats);
 ClassRoutes.get('/classById/:classId', getClassById);
 ClassRoutes.post('/create', createClass);
-ClassRoutes.put('/:classId', authenticateStaff,authenticateAdmin,authenticateUser,updateClass);
+ClassRoutes.put('/:classId', updateClass);
 ClassRoutes.put('/status/:classId',updateClassStatus);
 ClassRoutes.delete('/delete/:classId', deleteClass);
 

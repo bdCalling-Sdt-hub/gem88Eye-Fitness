@@ -7,3 +7,8 @@ declare global {
     }
   }
 }
+// import { JwtPayload } from "jsonwebtoken";
+
+// interface CustomRequest extends Request {
+//   user: JwtPayload & { id: string }; // Extend JwtPayload to include the id field
+// }

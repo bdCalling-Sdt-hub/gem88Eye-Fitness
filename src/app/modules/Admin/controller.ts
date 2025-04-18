@@ -158,10 +158,9 @@ const upload = fileUploadHandler();
 // };
 
 export const updateAdminProfile = async (req: Request, res: Response) => {
-  // Handle image upload first using multer
   upload(req, res, async (err: any) => {
     if (err) {
-      // Handle file upload errors
+
       return res.status(400).json({ message: err.message });
     }
 
@@ -175,58 +174,48 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
 
       const updatedAdminData: any = {};
 
-      // Update name if provided
+
       if (name) {
         updatedAdminData.name = name;
       }
 
-      // Update email if provided
       if (email) {
         updatedAdminData.email = email;
       }
 
-      // Update businessName if provided (optional)
       if (businessName) {
         updatedAdminData.businessName = businessName;
       }
 
-      // Update address if provided (optional)
       if (address) {
         updatedAdminData.address = address;
       }
 
-      // Handle image upload if provided
       if (req.files && (req.files as { [fieldname: string]: Express.Multer.File[] })['image']) {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] }; 
         const imagePath = '/uploads/image/' + files['image'][0].filename;  
         updatedAdminData.image = imagePath;
       }
 
-      // Update the admin profile in the database
       const updatedAdmin = await Admin.findByIdAndUpdate(admin.id, updatedAdminData, {
-        new: true, // Return updated document
-        runValidators: true, // Ensure validators are applied
+        new: true,
+        runValidators: true,
       });
 
-      // If admin not found, return an error
       if (!updatedAdmin) {
         return res.status(404).json({ message: 'Admin not found' });
       }
-
-      // Prepare the admin profile response
       const adminProfile = {
         id: updatedAdmin._id,
         name: updatedAdmin.name,
         email: updatedAdmin.email,
-        businessName: updatedAdmin.businessName || '', // If no businessName, return an empty string
-        address: updatedAdmin.address || '', // If no address, return an empty string
-        role: updatedAdmin.role,
-        image: updatedAdmin.image || '', // Default image if not provided
+        businessName: updatedAdmin.businessName || '', 
+        address: updatedAdmin.address || '',
+        image: updatedAdmin.image || '',
         createdAt: updatedAdmin.createdAt,
         updatedAt: updatedAdmin.updatedAt,
       };
 
-      // Send the updated admin profile in the response
       res.status(200).json({ message: 'Admin profile updated successfully', admin: adminProfile });
     } catch (error) {
       console.error('Error updating admin profile:', error);
@@ -255,8 +244,8 @@ export const getAdminProfile = async (req: Request, res: Response) => {
     const adminProfile = {
       id: fetchedAdmin._id,
       name: fetchedAdmin.name,
-      businessName: fetchedAdmin.businessName || '', // If no businessName, return an empty string
-      address: fetchedAdmin.address || '', // If no address, return an empty string
+      businessName: fetchedAdmin.businessName || '',
+      address: fetchedAdmin.address || '', 
       email: fetchedAdmin.email,
       role: fetchedAdmin.role,
       image: fetchedAdmin.image || 'https://i.ibb.co/z5YHLV9/profile.png',
@@ -274,33 +263,26 @@ export const getAdminProfile = async (req: Request, res: Response) => {
 
 export const forgetPassword = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;  // Email passed in the body
+    const { email } = req.body; 
 
-    // Check if the email exists in Admin model
     let user = await Admin.findOne({ email });
 
-    // If not found in Admin, check in Staff model
     if (!user) {
       user = await Role.findOne({ email });
     }
 
-    // If user doesn't exist, return error
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate OTP (6-digit number)
     const otp = crypto.randomInt(100000, 999999).toString();
 
-    // Set OTP expiry (e.g., 10 minutes)
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // Save OTP and expiration time to the user record
     user.resetPasswordOTP = otp;
     user.resetPasswordExpires = otpExpires;
     await user.save();
 
-    // Send OTP to user's email
     const htmlContent = `
       <p>Your OTP for password reset is <strong>${otp}</strong>.</p>
       <p>This OTP will expire in 10 minutes.</p>
@@ -358,7 +340,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
 
-    // Find the user by email (search both Admin and Staff models)
+
     let user = await Admin.findOne({ email });
 
     if (!user) {
@@ -368,13 +350,10 @@ export const verifyOTP = async (req: Request, res: Response) => {
     if (!user || !user.resetPasswordOTP || !user.resetPasswordExpires) {
       return res.status(400).json({ message: "Invalid OTP request" });
     }
-
-    // Check if OTP matches and is not expired
     if (user.resetPasswordOTP !== otp || new Date() > user.resetPasswordExpires) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Clear OTP fields after verification
     user.resetPasswordOTP = '';
     user.resetPasswordExpires = new Date(0); 
     await user.save();
@@ -390,12 +369,10 @@ export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { email, newPassword, confirmPassword } = req.body;
 
-    // Ensure passwords match
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
-    // Find the user by email (search both Admin and Staff models)
     let user = await Admin.findOne({ email });
 
     if (!user) {
@@ -406,7 +383,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Hash the new password and update the user's password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
@@ -423,34 +399,28 @@ export const resetPassword = async (req: Request, res: Response) => {
 export const changePassword = async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
-    const adminId = req.admin?.id;  // The ID of the authenticated admin from the token
+    const adminId = req.admin?.id; 
 
-    // Check if all fields are provided
     if (!currentPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Validate that the new password and confirm password match
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ message: "New password and confirm password must match" });
     }
 
-    // Find the admin by their ID
     const admin = await Admin.findById(adminId);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
     }
 
-    // Verify the current password
     const isMatch = await bcrypt.compare(currentPassword, admin.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the admin's password
     admin.password = hashedPassword;
     await admin.save();
 
@@ -498,7 +468,7 @@ export const createLocation = async (req: Request, res: Response) => {
     const {
       locationName,
       address,
-      region,  // region is an array of strings containing state/city
+      region,  
       locationType,
       hourRate,
       hours,
@@ -512,16 +482,14 @@ export const createLocation = async (req: Request, res: Response) => {
       workType
     } = req.body;
 
-    // Ensure that region is provided and it's an array
     if (!region || !Array.isArray(region)) {
       return res.status(400).json({ message: "Region must be an array of states/cities." });
     }
 
-    // Build the location object to save in the database
     const newLocation = new Location({
       locationName,
       address,
-      region,  // Directly using region (state/city) as strings
+      region, 
       locationType,
       hourRate,
       hours,
@@ -534,7 +502,7 @@ export const createLocation = async (req: Request, res: Response) => {
       mobileNumber,
       workType,
       date: new Date(),  // Current date
-      status: 'active',  // Default status is active
+      status: 'active', 
     });
 
     // Save the location to the database
@@ -744,6 +712,7 @@ export const getAllLocations = async (req: Request, res: Response) => {
   }
 };
 
+//home 
 
 
 

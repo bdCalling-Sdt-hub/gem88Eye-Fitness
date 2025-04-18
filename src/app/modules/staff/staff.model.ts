@@ -19,6 +19,7 @@ const StaffSchema = new Schema<IStaff>(
     address: { type: String, required: false },
     documents: { type: String, required: true }, 
     expiryDate: { type: Date, required: true },
+    
     status: {
       type: String,
       enum: ["valid", "invalid"],

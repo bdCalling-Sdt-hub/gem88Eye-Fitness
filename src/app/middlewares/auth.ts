@@ -57,6 +57,8 @@ const auth =
   
   // Ensure that the 'user' object is defined or passed before this block
   
+  
+
   export const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.split(' ')[1];  // Get token from headers
   
@@ -121,40 +123,74 @@ const auth =
     }
   };
 
+  // export const authenticateStaff = async (req: Request, res: Response, next: NextFunction) => {
+  //   try {
+  //     const tokenWithBearer = req.headers.authorization;
+  
+  //     // If the token is not provided, return an error
+  //     if (!tokenWithBearer || !tokenWithBearer.startsWith('Bearer')) {
+  //       throw new ApiError(StatusCodes.UNAUTHORIZED, 'You are not authorized');
+  //     }
+  
+  //     const token = tokenWithBearer.split(' ')[1];  // Extract the token from 'Bearer <token>'
+  
+  //     // Verify the token and decode it
+  //     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+  
+
+  //     if (!decoded || !decoded.id) {
+  //       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token');
+  //     }
+  
+  //     console.log('Decoded token:', decoded);
+  
+
+  //     const staff = await Staff.findById(decoded.id);
+  
+  //     if (!staff) {
+  //       console.error(`Staff with ID ${decoded.id} not found in database.`);
+  //       throw new ApiError(StatusCodes.NOT_FOUND, 'Staff not found');
+  //     }
+  
+
+  //     req.user = staff;
+  //     next(); 
+  //   } catch (error) {
+  //     console.error('Error verifying token:', error);
+  //     next(error); 
+  //   }
+  // };
+
   export const authenticateStaff = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tokenWithBearer = req.headers.authorization;
-
       if (!tokenWithBearer || !tokenWithBearer.startsWith('Bearer')) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, 'You are not authorized');
       }
   
-      const token = tokenWithBearer.split(' ')[1];
-  
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+      const token = tokenWithBearer.split(' ')[1];  // Extract token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };  // Verify token
   
       if (!decoded || !decoded.id) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid token');
       }
   
+      // Log the decoded staff ID to verify
       console.log('Decoded token:', decoded);
   
-
       const staff = await Staff.findById(decoded.id);
-  
+      
+      // Check if staff is found
       if (!staff) {
-        console.error(`Staff with ID ${decoded.id} not found in database.`);
         throw new ApiError(StatusCodes.NOT_FOUND, 'Staff not found');
       }
   
-
-      req.user = staff;
-      next(); 
+      req.user = staff; // Attach staff to request
+      next();
     } catch (error) {
-      console.error('Error verifying token:', error);
-      next(error); 
+      console.error('Error during staff authentication:', error);
+      next(error);
     }
   };
-
   export default auth;
 

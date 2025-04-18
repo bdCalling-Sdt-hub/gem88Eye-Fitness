@@ -2,7 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 interface IEvent extends Document {
   name: string;
-  location: string;
+  location: Schema.Types.ObjectId;
   startTime: string;
   duration: number; 
   workType: 'online' | 'offline'; 
@@ -14,8 +14,8 @@ interface IEvent extends Document {
 }
 
 const eventSchema = new Schema<IEvent>({
-  name: { type: String, required: true },
-  location: { type: String, required: true },
+  name: { },
+  location: {type: Schema.Types.ObjectId, ref: 'Location', required: true  },
   startTime: { type: String, required: true },
   duration: { type: Number, required: true },
   workType: { type: String, enum: ['online', 'offline'], default: 'offline' },

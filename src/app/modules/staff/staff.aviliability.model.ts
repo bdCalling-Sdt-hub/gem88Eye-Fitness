@@ -1,11 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IStaffAvailability extends Document {
-  staff: mongoose.Schema.Types.ObjectId; // Reference to Staff model
-  day: string; 
-  date: Date; 
-  startTime: string; // Start time (e.g., '09:00')
-  endTime: string; // End time (e.g., '17:00')
+  staff: mongoose.Schema.Types.ObjectId; 
+  day: string;
+  date: Date;
+  startTime: string; 
+  endTime: string;
 }
 
 const staffAvailabilitySchema = new Schema<IStaffAvailability>(

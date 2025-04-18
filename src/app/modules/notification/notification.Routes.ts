@@ -1,8 +1,10 @@
-import { Router } from "express";
-import { getNotifications } from "./notification.controller";
+import express from 'express';
+import { authenticateAdmin } from '../../middlewares/auth';
+import { getNotifications } from './notification.controller';
 
-const NotificationRoutes = Router();
 
-NotificationRoutes.get('/:userId', getNotifications);
+const notification = express.Router();
 
-export default NotificationRoutes;
+notification.get('/admin', authenticateAdmin, getNotifications);
+
+export default notification;

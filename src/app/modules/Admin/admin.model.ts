@@ -6,11 +6,11 @@ export interface IAdmin extends Document {
   address: string;
   email: string;
   password: string;
-  image?: string; // Optional field for image
+  image?: string;
   role: string; Default: "admin"
   resetPasswordOTP: string; 
   resetPasswordExpires: Date;
-  createdAt?: Date; // Add createdAt property
+  createdAt?: Date; 
   updatedAt?: Date;
 }
 

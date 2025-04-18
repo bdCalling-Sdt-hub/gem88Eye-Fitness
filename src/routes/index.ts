@@ -13,6 +13,7 @@ import AppointmentRoutes from '../app/modules/contact/appoinment.routes';
 import ClassRoutes from '../app/modules/class/class.Route';
 import EventRoutes from '../app/modules/event/event.routes';
 import NotificationRoutes from '../app/modules/notification/notification.Routes';
+import CalendarRoutes from '../app/modules/calender/appoinment.Routes';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ const apiRoutes = [
   { path: '/invoice', route: invoiceRoutes },
   { path: '/leads', route: LeadsRoutes },
   { path: '/appointment', route: AppointmentRoutes },
+  { path: '/calendar', route: CalendarRoutes },
   { path: '/class', route: ClassRoutes },
   { path: '/event', route: EventRoutes },
   { path: '/notification', route: NotificationRoutes },

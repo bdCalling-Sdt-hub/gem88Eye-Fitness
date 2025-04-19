@@ -337,62 +337,53 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
 ): Promise<void> => {
   try {
     const { location, dateRange } = req.query;
-    console.log('Location query param:', location); // Debug: log what's coming in
+    console.log('Location query param:', location);
 
     const { startDate, endDate } = getDateRange(dateRange as string);
     const now = new Date();
 
-    // Default filters (empty) for location
     let appointmentLocationFilter = {};
     let eventLocationFilter = {};
     let classLocationFilter = {};
 
-    // Only apply location filter if location query is provided
     if (location) {
-      // Look up the location by name if the query is provided
       const locationDoc = await Location.findOne({
         locationName: new RegExp(String(location), 'i') // match location name case-insensitively
       }).select('_id locationName');
 
-      console.log('Found location document:', locationDoc); // Debug: log what was found
+      console.log('Found location document:', locationDoc);
 
       if (locationDoc) {
-        // If location is found, set filters for Appointment and Class models using ObjectId
         appointmentLocationFilter = { location: locationDoc._id };
         classLocationFilter = { location: locationDoc._id };
 
-        // For Event model, match locationName (not ObjectId) using the locationName field
         eventLocationFilter = {
           locationName: new RegExp(String(location), 'i') // Match locationName for Event model
         };
       } else {
-        // Check if we have any events with this location string
+
         const eventWithLocation = await Event.findOne({
-          locationName: new RegExp(String(location), 'i') // Ensure you're matching by locationName
+          locationName: new RegExp(String(location), 'i')
         });
 
         if (eventWithLocation) {
           console.log('Found event with this location:', eventWithLocation.name);
-          // Continue with empty filters for Appointment and Class, but use string-based filter for Event
         } else {
-          // Return error if no location found
           res.status(400).json({
             success: false,
             message: 'Location not found in the database.',
           });
-          return; // Early exit if no location found
+          return;
         }
       }
     }
 
-    // Get appointments with the appropriate filter (empty if no location query is provided)
     const allAppointments = await Appointment.find(appointmentLocationFilter)
       .populate('contact')
       .populate('staff')
       .populate('lead')
       .populate('location');
 
-    // Filter appointments by date
     const upcomingAppointments = allAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.date);
 
@@ -417,10 +408,9 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
       return true;
     });
 
-    // Handle events with string location filter (if location is a string)
     const getEventQuery = (isPast: boolean) => {
       const query: any = {
-        ...eventLocationFilter // Only apply filter if location query was provided
+        ...eventLocationFilter
       };
 
       if (isPast) {
@@ -448,7 +438,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
       .populate('staff')
       .populate('location');
 
-    // Handle classes with ObjectId location filter (if class location is an ObjectId)
     const allClasses = await Class.find(classLocationFilter)
       .populate('staff')
       .populate('lead')
@@ -496,13 +485,9 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
     });
 
   } catch (err) {
-    next(err); // Pass the error to the global error handler
+    next(err);
   }
 };
-
-
-
-
 
 
 // export const getUpcomingAndPastAppointmentsEventsClasses = async (
@@ -637,11 +622,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
 //     next(err); // Pass the error to the global error handler
 //   }
 // };
-
-
-
-
-
 
 export const getUpcomingAndPastAppointmentsEventsClassesWithFilter = async (
   req: Request, 

@@ -140,7 +140,6 @@ export const updateInvoice = async (req: Request, res: Response, next: NextFunct
   const { invoiceId, clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
 
   try {
-    // Find the invoice by invoiceId
     const invoice = await Invoice.findOne({ invoiceId });
 
     if (!invoice) {
@@ -148,18 +147,16 @@ export const updateInvoice = async (req: Request, res: Response, next: NextFunct
        return
     }
 
-    // If the clientName is provided, find the client
     if (clientName) {
       const client = await Client.findOne({ client_name: clientName });
       if (!client) {
          res.status(404).json({ success: false, message: 'Client not found' });
          return
       }
-      invoice.client = clientName;  // Update the client name
-      invoice.active = client.active;  // Update active status
+      invoice.client = clientName;
+      invoice.active = client.active; 
     }
 
-    // Update only the fields that are provided in the request
     if (className) invoice.className = className;
     if (contactName) invoice.contactName = contactName;
     if (services) invoice.services = services;
@@ -168,7 +165,6 @@ export const updateInvoice = async (req: Request, res: Response, next: NextFunct
     if (invoiceDate) invoice.invoiceDate = invoiceDate;
     if (invoiceDueDate) invoice.invoiceDueDate = invoiceDueDate;
 
-    // Save the updated invoice
     const updatedInvoice = await invoice.save();
 
     res.status(200).json({
@@ -177,7 +173,7 @@ export const updateInvoice = async (req: Request, res: Response, next: NextFunct
       data: updatedInvoice,
     });
   } catch (err) {
-    next(err);  // Pass the error to the global error handler
+    next(err);  
   }
 };
 

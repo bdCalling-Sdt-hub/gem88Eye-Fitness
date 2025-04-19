@@ -36,7 +36,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 interface IInvoice extends Document {
   invoiceId: string;
-  client: string;  // Store client name instead of client ID
+  client: string; 
   className: string;
   contactName: string;
   services: string;
@@ -44,12 +44,12 @@ interface IInvoice extends Document {
   invoiceNumber: string;
   invoiceDate: Date;
   invoiceDueDate: Date;
-  active: boolean;  // Active status from the client
+  active: boolean; 
 }
 
 const invoiceSchema: Schema = new Schema({
   invoiceId: { type: String, required: true },
-  client: { type: String, required: true },  // Store client name
+  client: { type: String, required: true }, 
   className: { type: String, required: true },
   contactName: { type: String, required: true },
   services: { type: String, required: true },

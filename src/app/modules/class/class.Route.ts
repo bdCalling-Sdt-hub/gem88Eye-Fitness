@@ -4,7 +4,6 @@ import { authenticateAdmin, authenticateStaff, authenticateUser } from '../../mi
 
 const ClassRoutes = express.Router();
 
-// Route to fetch predefined class names
 ClassRoutes.get('/names', getPredefinedClassNames);
 ClassRoutes.get('/get', getAllClasses);
 ClassRoutes.get('/getstates', getClassStats);

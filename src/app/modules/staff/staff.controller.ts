@@ -234,13 +234,11 @@ interface GroupedDayAvailability {
 export const addStaffAvailability = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { staffId, availability, date } = req.body as StaffAvailabilityRequest;
 
-  // Ensure required fields are provided
   if (!staffId || !availability || !Array.isArray(availability) || !date) {
     res.status(400).json({ success: false, message: 'Staff ID, availability, and date are required!' });
     return;
   }
 
-  // Validate date format
   const parsedDate = moment.utc(date, 'YYYY-MM-DD', true);
   if (!parsedDate.isValid()) {
     res.status(400).json({ success: false, message: 'Invalid date format. Please provide a valid date (YYYY-MM-DD).' });
@@ -319,7 +317,6 @@ export const addStaffAvailability = async (req: Request, res: Response, next: Ne
       });
     });
 
-    // Convert groupedByDay object to an array of grouped records
     const formattedResponse = Object.values(groupedByDay);
 
     res.status(201).json({

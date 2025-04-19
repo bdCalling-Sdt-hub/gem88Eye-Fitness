@@ -63,9 +63,7 @@ export const createInstructor = async (req: Request, res: Response) => {
 
   export const getInstructorById = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params; // Get the instructor id from the route parameters
-  
-      // Find the instructor by id and populate the instructorName if needed
+      const { id } = req.params;
       const instructor = await InstructorDetails.findById(id).populate('instructorName');
   
       if (!instructor) {
@@ -255,9 +253,6 @@ export const createWorkDetails = async (req: Request, res: Response) => {
     }
   };
   
-  // Controller for updating miles details
-
-
 
 export const getAllDataByInstructorId = async (req: Request, res: Response) => {
     try {
@@ -404,7 +399,7 @@ export const getAllDataByInstructorId = async (req: Request, res: Response) => {
         weekStart: week2Start,
         weekEnd: week2End,
         workDetails: week2WorkDetails,
-        milesDetails: week2MilesDetails,  // This now uses the weekNumber filter
+        milesDetails: week2MilesDetails,  
         summary: {
           totalWorkingHours: week2WorkingHours,
           totalMiles: week2Miles,
@@ -416,24 +411,12 @@ export const getAllDataByInstructorId = async (req: Request, res: Response) => {
         }
       });
   
-//       // Calculate overall totals
-//       const overallTotals = {
-//         totalWorkingHours: week1WorkingHours + week2WorkingHours,
-//         totalMiles: week1Miles + week2Miles,
-//         totalWorkAmount: parseFloat((week1WorkAmount + week2WorkAmount).toFixed(2)),
-//         totalMilesAmount: parseFloat((week1MilesAmount + week2MilesAmount).toFixed(2)),
-//         grandTotalAmount: parseFloat((week1WorkAmount + week1MilesAmount + week2WorkAmount + week2MilesAmount).toFixed(2))
-//       };
-  
-//       return res.status(200).json({
-//         instructor,
-//         weeklyData,
-//         overallTotals
-//       });
 const overallTotals = {
     totalWorkingHours: week1WorkingHours + week2WorkingHours,
     totalWorkAmount: parseFloat((week1WorkAmount + week2WorkAmount).toFixed(2)),
     grandTotalAmount: parseFloat((week1WorkAmount + week2WorkAmount).toFixed(2)),
+    totalMiles: week1Miles + week2Miles,
+    totalMilesAmount: parseFloat((week1MilesAmount + week2MilesAmount).toFixed(2)),
   };
 
   // Biweekly Section: Combine work details for both weeks (without miles)
@@ -462,6 +445,7 @@ const overallTotals = {
       totalWorkingHours: totalBiweeklyWorkingHours,
       avgHourRate: parseFloat(biweeklyAvgHourRate.toFixed(2)),
       totalWorkAmount: parseFloat(totalBiweeklyWorkAmount.toFixed(2)),
+
     },
   };
 

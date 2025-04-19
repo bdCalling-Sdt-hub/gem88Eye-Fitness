@@ -16,13 +16,12 @@
 
 
 
-// Import required modules
 import { Request, Response, NextFunction } from 'express';
 import  Notification  from './notification.model';
 import mongoose from 'mongoose';
 import  admin  from '../Admin/admin.model';
 
-// Updated version of your getNotifications controller
+
 export const getNotifications = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const admin = (req as any).admin;
@@ -32,12 +31,11 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
        return;
     }
 
-    // Pagination
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Filters
+
     const typeFilter = req.query.type ? { type: req.query.type } : {};
     const dateFilter = req.query.dateFrom && req.query.dateTo ? {
       scheduledTime: {
@@ -46,11 +44,9 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
       }
     } : {};
     
-    // Status filter
     const statusFilter = req.query.status === 'read' ? { isRead: true } : 
                          req.query.status === 'unread' ? { isRead: false } : {};
 
-    // Combine all filters
     const filters = {
       userId: admin.id,
       ...typeFilter,
@@ -58,17 +54,14 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
       ...statusFilter
     };
 
-    // Fetch notifications with filters and pagination
     const notifications = await Notification.find(filters)
       .sort({ scheduledTime: -1 })
       .skip(skip)
       .limit(limit)
       .exec();
 
-    // Get total filtered notifications count
     const totalNotifications = await Notification.countDocuments(filters);
 
-    // Return notifications with pagination details
     res.status(200).json({
       success: true,
       message: 'Notifications retrieved successfully.',
@@ -84,7 +77,6 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
   }
 };
 
-// Mark notification as read
 export const markNotificationAsRead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { notificationId } = req.params;

@@ -1,14 +1,13 @@
-// src/app/controllers/lead.controller.ts
+
 import { Request, Response, NextFunction } from 'express';
-import Lead from './leads.model';  // Import Lead model
+import Lead from './leads.model'; 
 import csvParser from 'csv-parser';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
-import fs from 'fs';  // Import file system module for file operations
-import { ObjectId } from 'mongoose';  // Import ObjectId type from mongoose
+import fs from 'fs'; 
+import { ObjectId } from 'mongoose';
 import Appointment from './appoinment.model';
 import { emailHelper } from '../../../helpers/emailHelper';
 import Class from '../class/class.model';
-// Controller to add a lead
 export const addLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { lead_name, lead_email, address, gender, phone, staff, lead } = req.body;
 
@@ -41,7 +40,7 @@ export const addLead = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
-const uploadCSV = fileUploadHandler();  // This is the multer upload handler you created
+const uploadCSV = fileUploadHandler(); 
 
 // export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFunction): void => {
 //   uploadCSV(req, res, (err) => {
@@ -108,34 +107,28 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
     const filePath = uploadedFile.path;
 
     const leadsData: any[] = [];
-    const leadsExist: any[] = [];  // To store the leads that already exist
+    const leadsExist: any[] = []; 
 
-    // Start reading and processing the CSV file
     fs.createReadStream(filePath)
       .pipe(csvParser())
       .on('data', async (row) => {
         const { lead_name, lead_email, address, gender, phone } = row;
 
-        // Check if all required fields are present
         if (lead_name && lead_email && address && gender && phone) {
           try {
-            // Check if the lead already exists using the lead_email
             const existingLead = await Lead.findOne({ lead_email });
 
             if (existingLead) {
-              // If the lead exists, log that the lead is already present
               console.log(`Lead with email ${lead_email} already exists. Updating the lead.`);
 
-              // Update the existing lead
               const updatedLead = await Lead.findOneAndUpdate(
                 { lead_email },
                 { lead_name, address, gender, phone },
                 { new: true }
               );
-              leadsData.push(updatedLead);  // Add updated lead to leadsData array
-              leadsExist.push(updatedLead); // Add to leadsExist array to track updated leads
+              leadsData.push(updatedLead); 
+              leadsExist.push(updatedLead); 
             } else {
-              // If the lead doesn't exist, create a new lead
               const newLead = new Lead({
                 lead_name,
                 lead_email,
@@ -144,33 +137,28 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
                 phone,
               });
               await newLead.save();
-              leadsData.push(newLead);  // Add new lead to leadsData array
+              leadsData.push(newLead); 
             }
           } catch (error) {
-            // Handle error during lead creation or update
             console.error(`Error processing lead with email ${lead_email}:`, error);
           }
         }
       })
       .on('end', () => {
-        // Delete the uploaded CSV file after processing
         fs.unlinkSync(filePath);
 
-        // Construct appropriate response message based on leads
         const message = leadsExist.length > 0
           ? `Leads updated successfully from CSV! ${leadsExist.length} leads were updated.`
           : 'Leads updated successfully from CSV! All new leads were created.';
 
-        // Send response with the data of updated or created leads
         res.status(200).json({
           success: true,
           message: message,
-          data: leadsData,  // Include both created and updated leads
+          data: leadsData, 
         });
       })
       .on('error', (error) => {
-        // Handle any error while reading or parsing the CSV
-        fs.unlinkSync(filePath);  // Clean up the file
+        fs.unlinkSync(filePath); 
         return res.status(500).json({
           success: false,
           message: 'Error while parsing CSV',
@@ -180,39 +168,34 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
   });
 };
 export const updateLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { leadId } = req.params;  // Assuming the lead ID is passed in the URL parameters
+  const { leadId } = req.params; 
   const { lead_name, lead_email, address, gender, phone, staff, lead } = req.body;
 
   try {
-    // Find the lead by ID
-    const leadToUpdate = await Lead.findById(leadId);
 
-    // If the lead is not found, return a 404 error
+    const leadToUpdate = await Lead.findById(leadId);
     if (!leadToUpdate) {
        res.status(404).json({ success: false, message: 'Lead not found!' });
        return
     }
-
-    // Only update fields that are provided in the request body
     if (lead_name) leadToUpdate.lead_name = lead_name;
     if (lead_email) leadToUpdate.lead_email = lead_email;
     if (address) leadToUpdate.address = address;
     if (gender) leadToUpdate.gender = gender;
     if (phone) leadToUpdate.phone = phone;
-    if (staff) leadToUpdate.staff = staff;  // Optional: Update staff ID if provided
-    if (lead) leadToUpdate.lead = lead;    // Optional: Update lead ID if provided
+    if (staff) leadToUpdate.staff = staff; 
+    if (lead) leadToUpdate.lead = lead;   
 
-    // Save the updated lead
     await leadToUpdate.save();
 
-    // Return the updated lead
+
     res.status(200).json({
       success: true,
       message: 'Lead updated successfully!',
       data: leadToUpdate,
     });
   } catch (err) {
-    next(err);  // Pass any errors to the global error handler
+    next(err);  
   }
 };
 
@@ -289,33 +272,28 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
 //   }
 // };
 export const getLeadById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { leadId } = req.params; // Extract leadId from URL params
-  const { filter } = req.query;  // Get the filter query parameter (upcoming or past)
+  const { leadId } = req.params;
+  const { filter } = req.query; 
 
   try {
-    // Fetch the lead from the database using the provided leadId
     const lead = await Lead.findById(leadId)
-      .populate('staff', 'name')  // Populate staff field in lead (staff name)
-      .populate('lead', 'lead_name');  // Populate lead field in lead (lead name)
+      .populate('staff', 'name') 
+      .populate('lead', 'lead_name'); 
 
-    // Check if the lead was found
     if (!lead) {
       res.status(404).json({ success: false, message: 'Lead not found' });
       return;
     }
 
-    // Fetch appointments for the lead and populate the staff and lead fields
     const appointments = await Appointment.find({ lead: leadId })
       .populate('staff', 'name')
       .populate('lead', 'lead_name');
 
-    // Fetch classes for the lead and populate the staff, lead, and schedule fields
     const classes = await Class.find({ lead: leadId })
       .populate('staff', 'name')
       .populate('lead', 'lead_name')
-      .populate('schedule', 'date');  // Populate schedule.date to access individual session dates
+      .populate('schedule', 'date'); 
 
-    // If there are no appointments or classes, return a 404 error
     if (appointments.length === 0 && classes.length === 0) {
       res.status(404).json({ success: false, message: 'No appointments or classes found for this lead' });
       return;
@@ -323,30 +301,23 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
 
     const currentDate = new Date();
 
-    // Initialize filtered arrays for appointments and classes
     let filteredAppointments = appointments;
     let filteredClasses = classes;
 
-    // Apply filtering if the "filter" query parameter is provided
     if (filter) {
       if (filter === 'upcoming') {
-        // Filter upcoming appointments based on date
-        filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
 
-        // Filter upcoming classes based on each session's date
+        filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
         filteredClasses = classes.filter((classItem) => {
           return classItem.schedule.some(session => new Date(session.date) > currentDate);
         });
       } else if (filter === 'past') {
-        // Filter past appointments based on date
         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) <= currentDate);
 
-        // Filter past classes based on each session's date
         filteredClasses = classes.filter((classItem) => {
           return classItem.schedule.every(session => new Date(session.date) <= currentDate);
         });
       } else {
-        // Return an error if the filter type is invalid
         res.status(400).json({
           success: false,
           message: 'Invalid filter type. Use "upcoming" or "past".',
@@ -354,24 +325,22 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
         return;
       }
     }
-
-    // Construct the response data
     const responseData = {
       lead,
       upcomingAppointments: filteredAppointments,
-      pastAppointments: filteredAppointments,  // Same array for both upcoming and past, just filtered by date
+      pastAppointments: filteredAppointments,
       upcomingClasses: filteredClasses,
-      pastClasses: filteredClasses,  // Same array for both upcoming and past, just filtered by date
+      pastClasses: filteredClasses, 
     };
 
-    // Return the filtered data as the response
+
     res.status(200).json({
       success: true,
       message: 'Lead profile with filtered appointments and classes retrieved successfully',
       data: responseData,
     });
   } catch (err) {
-    next(err);  // Pass any errors to the global error handler
+    next(err);  
   }
 };
 
@@ -402,12 +371,12 @@ export const sendEmailToLead = async (req: Request, res: Response, next: NextFun
 };
 
 export const deleteLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const leadId = req.params.id;  // Get the client ID from the URL
+  const leadId = req.params.id;  
 
   try {
     const deletedLead = await Lead.findByIdAndDelete(leadId);
 
-    // If the client is not found
+
     if (!deletedLead) {
        res.status(404).json({
         success: false,
@@ -415,7 +384,7 @@ export const deleteLead = async (req: Request, res: Response, next: NextFunction
       });
     }
 
-    // Return success message
+
     res.status(200).json({
       success: true,
       message: 'Lead deleted successfully!',
@@ -427,7 +396,7 @@ export const deleteLead = async (req: Request, res: Response, next: NextFunction
 };
 
 
-// Controller to get all leads
+
 export const getAllLeads = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const leads = await Lead.find();
@@ -440,10 +409,10 @@ export const getAllLeads = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// Controller to update the active status of a lead
+
 export const updateLeadStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const leadId = req.params.id; 
-  const {active } = req.body;  // Get lead name and active status from the request body
+  const {active } = req.body; 
 
   if (typeof active !== 'boolean') {
      res.status(400).json({

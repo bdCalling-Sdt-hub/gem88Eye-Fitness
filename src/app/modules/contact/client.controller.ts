@@ -28,10 +28,10 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
 
   export const getAllClients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Fetch all clients from the database
+
       const clients = await Client.find();
   
-      // If no clients are found
+  
       if (clients.length === 0) {
         res.status(404).json({
           success: false,
@@ -40,55 +40,48 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
         return;
       }
   
-      // Return the list of clients
       res.status(200).json({
         success: true,
         data: clients
       });
     } catch (err) {
-      next(err); // Pass the error to the global error handler
+      next(err); 
     }
   };
 
   export const updateClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { id } = req.params;  // Change clientId to id to match the route parameter
+    const { id } = req.params;  
     const { client_name, client_email, address, gender, phone } = req.body;
   
     try {
-      // Find the client by ID
-      const clientToUpdate = await Client.findById(id); // Use 'id' instead of 'clientId'
+      const clientToUpdate = await Client.findById(id);
     
-      // If the client is not found, return a 404 error
       if (!clientToUpdate) {
          res.status(404).json({ success: false, message: 'Client not found!' });
          return;
       }
-  
-      // Only update fields that are provided in the request body
       if (client_name) clientToUpdate.client_name = client_name;
       if (client_email) clientToUpdate.client_email = client_email;
       if (address) clientToUpdate.address = address;
       if (gender) clientToUpdate.gender = gender;
       if (phone) clientToUpdate.phone = phone;
   
-      // Save the updated client
       await clientToUpdate.save();
-  
-      // Return the updated client
+
       res.status(200).json({
         success: true,
         message: 'Client updated successfully!',
         data: clientToUpdate,
       });
     } catch (err) {
-      next(err);  // Pass any errors to the global error handler
+      next(err);  
     }
   };
   
 
   export const updateClientStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const clientId = req.params.id;  // Get the client ID from the URL
-    const { active } = req.body;  // Get the new active status from the request body
+    const clientId = req.params.id;  
+    const { active } = req.body;  
   
     if (typeof active !== 'boolean') {
        res.status(400).json({
@@ -98,10 +91,7 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
     }
   
     try {
-      // Find the client by ID and update the active status
       const updatedClient = await Client.findByIdAndUpdate(clientId, { active }, { new: true });
-  
-      // If the client is not found
       if (!updatedClient) {
          res.status(404).json({
           success: false,
@@ -110,25 +100,23 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
         });
       }
   
-      // Return the updated client
       res.status(200).json({
         success: true,
         message: 'Client status updated successfully!',
         data: updatedClient
       });
     } catch (err) {
-      next(err); // Pass the error to the global error handler
+      next(err); 
     }
   };
 
   export const deleteClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const clientId = req.params.id;  // Get the client ID from the URL
+    const clientId = req.params.id; 
   
     try {
-      // Try to find and remove the client by ID
+
       const deletedClient = await Client.findByIdAndDelete(clientId);
   
-      // If the client is not found
       if (!deletedClient) {
          res.status(404).json({
           success: false,
@@ -136,13 +124,13 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
         });
       }
   
-      // Return success message
+
       res.status(200).json({
         success: true,
         message: 'Client deleted successfully!',
         data: deletedClient
       });
     } catch (err) {
-      next(err); // Pass the error to the global error handler
+      next(err); 
     }
   };

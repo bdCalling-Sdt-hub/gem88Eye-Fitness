@@ -1,4 +1,3 @@
-// app/routes/clientRoutes.ts
 import express from 'express';
 import { addClient, deleteClient, getAllClients, updateClient, updateClientStatus } from './client.controller';
 import { sendEmailToLeadOrClients } from './mailer.contact.controller';

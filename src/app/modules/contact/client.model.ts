@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-// Define the interface for the client document (optional, but recommended)
 interface IClient extends Document {
   client_name: string;
   client_email: string;
@@ -11,7 +10,6 @@ interface IClient extends Document {
   createdAt: Date;
 }
 
-// Define the schema for the client model
 const clientSchema: Schema = new Schema({
   client_name: { type: String, required: true },
   client_email: { type: String, required: true },
@@ -22,7 +20,6 @@ const clientSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Export the model as a module
 const Client = mongoose.model<IClient>('Client', clientSchema);
 
 export default Client;

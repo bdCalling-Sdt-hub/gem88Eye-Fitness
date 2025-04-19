@@ -237,7 +237,6 @@ export const bookAppointment = async (
       return;
     }
     
-    // Determine the status based on the appointment date and time
     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
     
     const newAppointment = new Appointment({
@@ -252,8 +251,6 @@ export const bookAppointment = async (
     
     await newAppointment.save();
     
-    // Use the new admin notification function
-    // This will create both immediate notifications and 1-day-before reminders
     createAdminNotifications(
       service,
       'Appointment',
@@ -261,7 +258,6 @@ export const bookAppointment = async (
       req.app.get('io') 
     );
     
-    // Create notifications for client, staff, and lead
     const notificationMessage = `You have a new appointment for ${service}`;
     
     const clientNotification = scheduleNotification(
@@ -302,12 +298,10 @@ export const bookAppointment = async (
 };
 const createAdminNotifications = async (appointment: any, p0: string, appointmentDateTime: Date, p1: any) => {
   try {
-    // Fetch all admins
     const admins = await Admin.find();
 
-    // Prepare notification data for each admin
     const notificationMessage = `A new appointment has been booked for service: ${appointment.service} with client: ${appointment.contact.name}`;
-    const notificationDate = new Date();  // You can adjust the time as needed
+    const notificationDate = new Date();
 
     const notificationData = admins.map(admin => ({
       userId: admin._id,
@@ -316,7 +310,6 @@ const createAdminNotifications = async (appointment: any, p0: string, appointmen
       type: 'Appointment'
     }));
 
-    // Insert the notifications into the database
     await Notification.insertMany(notificationData);
   } catch (err) {
     console.error('Error creating admin notifications:', err);
@@ -375,23 +368,21 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
     try {
       // Fetch all appointments and populate associated client, staff, and lead details
       const appointments = await Appointment.find()
-        .populate('contact')  // Populate client details
-        .populate('staff')    // Populate staff details
-        .populate('lead');    // Populate lead details
+        .populate('contact')  
+        .populate('staff')  
+        .populate('lead');   
   
       if (!appointments || appointments.length === 0) {
         res.status(404).json({ success: false, message: 'No appointments found' });
         return;
       }
   
-      // Return the list of appointments along with populated client, staff, and lead data
       res.status(200).json({
         success: true,
         message: 'Appointments fetched successfully',
         data: appointments
       });
     } catch (err) {
-      // Pass any error that occurs to the global error handler
       next(err);
     }
   };
@@ -399,16 +390,16 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
  
   export const getAppointmentStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { filter, status } = req.query;  // Extract filter and status from query params
+      const { filter, status } = req.query;  
       const filterQuery: any = {};
   
-      // If 'filter' is provided, apply it to staff name, contact name, service, date, and time
+
       if (filter) {
-        const regex = { $regex: filter, $options: 'i' }; // Case-insensitive regex search
+        const regex = { $regex: filter, $options: 'i' }; //case insensitive
   
         filterQuery['$or'] = [
           { 'staff.name': regex },
-          { 'contact.contactName': regex },  // Ensure correct field name if it's different
+          { 'contact.contactName': regex }, 
           { service: regex },
           { date: regex },
           { time: regex }
@@ -417,12 +408,11 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   
       // Fetch all appointments based on the constructed filter query
       const allAppointments = await Appointment.find(filterQuery)
-        .populate('staff', 'name')  // Populate staff name
-        .populate('contact', 'contactName')  // Populate contact name (ensure the correct field name)
-        .populate('lead', 'leadName')  // Populate lead name
+        .populate('staff', 'name')
+        .populate('contact', 'contactName')  
+        .populate('lead', 'leadName')  
         .exec();
   
-      // If no appointments found, return a 404 response
       if (!allAppointments || allAppointments.length === 0) {
        res.status(404).json({
           success: false,
@@ -435,27 +425,23 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
       let completedAppointmentsCount = 0;
       let upcomingAppointmentsCount = 0;
   
-      // Categorize appointments as 'completed' or 'upcoming' and filter them
       const categorizedAppointments = allAppointments.map((appointment) => {
         const appointmentDateTime = moment(`${appointment.date}T${appointment.time}`);
   
         const appointmentStatus = appointmentDateTime.isBefore(currentDateTime) ? 'completed' : 'upcoming';
   
-        // Update counts based on computed status
         if (appointmentStatus === 'completed') {
           completedAppointmentsCount++;
         } else {
           upcomingAppointmentsCount++;
         }
   
-        // Attach computed status to each appointment
         return {
           ...appointment.toObject(),
           status: appointmentStatus,
         };
       });
   
-      // If a specific status is requested, filter the appointments by status
       if (status) {
         const filteredAppointments = categorizedAppointments.filter(
           (appointment) => appointment.status === status
@@ -473,7 +459,6 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
         });
       }
   
-      // If no status filter is applied, return all appointments with their computed status
        res.status(200).json({
         success: true,
         message: 'Appointment statistics fetched successfully.',

@@ -1,13 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Define the IInstructor interface
 export interface IInstructor extends Document {
   periodBeginning: Date;
   periodEnding: Date;
   instructorName: mongoose.Schema.Types.ObjectId;  
 }
 
-// Define the InstructorDetails schema
 const InstructorDeatils = new Schema<IInstructor>(
   {
     periodBeginning: { type: Date, required: true },

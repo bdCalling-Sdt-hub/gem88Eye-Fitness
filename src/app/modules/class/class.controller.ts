@@ -166,21 +166,21 @@ export const createClass = async (req: Request, res: Response, next: NextFunctio
 
     const savedClass = await newClass.save();
 
-    // Create notifications for the staff and lead
+
     const notificationMessage = `You have been assigned to a new class: ${name}`;
-    const notificationDate = new Date(); // Adjust the scheduled time as needed
+    const notificationDate = new Date();
 
     const notificationData = [
       {
         userId: lead._id, 
-        userModel: 'Lead',  // Set the userModel as 'Lead' for the lead
+        userModel: 'Lead',  
         message: notificationMessage, 
         scheduledTime: notificationDate, 
         type: 'Class'
       },
       {
         userId: staff._id, 
-        userModel: 'Staff',  // Set the userModel as 'Staff' for the staff
+        userModel: 'Staff',
         message: notificationMessage, 
         scheduledTime: notificationDate, 
         type: 'Class'
@@ -205,7 +205,7 @@ export const updateClass = async (req: Request, res: Response, next: NextFunctio
   const {
     name,
     location,
-    schedule,  // Expecting array of sessions for different dates
+    schedule, 
     totalCapacity,
     frequency,
     workType,
@@ -252,7 +252,7 @@ export const updateClass = async (req: Request, res: Response, next: NextFunctio
       data: updatedClass,
     });
   } catch (err) {
-    next(err);  // Pass any errors to the global error handler
+    next(err); 
   }
 };
 
@@ -340,16 +340,14 @@ export const getAllClasses = async (req: Request, res: Response, next: NextFunct
 };
 
 export const getClassById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { classId } = req.params;  // Extract classId from URL params
+  const { classId } = req.params; 
 
   try {
-    // Fetch the class by ID and populate lead, staff, and schedule
     const classDetails = await Class.findById(classId)
-      .populate('lead', 'lead_name')   // Populate lead_name field from Lead model
-      .populate('staff', 'name')       // Populate name field from Staff model
-      .populate('schedule', 'date startTime duration');  // Populate schedule date, startTime, duration
+      .populate('lead', 'lead_name')   
+      .populate('staff', 'name')   
+      .populate('schedule', 'date startTime duration');  
 
-    // Check if the class was found
     if (!classDetails) {
        res.status(404).json({
         success: false,
@@ -357,14 +355,13 @@ export const getClassById = async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // Return the class data
     res.status(200).json({
       success: true,
       message: 'Class fetched successfully.',
       data: classDetails,
     });
   } catch (err) {
-    next(err);  // Pass any errors to the global error handler
+    next(err);
   }
 };
 
@@ -456,21 +453,19 @@ export const getClassById = async (req: Request, res: Response, next: NextFuncti
 export const getClassStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { filter, status, date, location, staff, className,lead } = req.query;
-    const filterQuery: any = {}; // Query filter object
+    const filterQuery: any = {}; 
 
     console.log('Received filters:', req.query);
 
     if (filter) {
       const filterText = filter.toString().trim();
 
-      // Apply regex only on string fields
       filterQuery['name'] = { $regex: filterText, $options: 'i' }; 
       filterQuery['description'] = { $regex: filterText, $options: 'i' }; 
 
-      // Apply regex on `staff.name` if `staff` is an ObjectId reference (assuming 'staff' has a 'name' field)
+
       filterQuery['staff.name'] = { $regex: filterText, $options: 'i' };
 
-      // Apply regex on `location.locationName` if `location` is an ObjectId reference (assuming 'location' has a 'locationName' field)
       filterQuery['location.locationName'] = { $regex: filterText, $options: 'i' };
     }
 
@@ -491,8 +486,8 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
 
     const allClasses = await Class.find(filterQuery)
       .populate('lead', 'lead_name')
-      .populate('staff', 'name') // Assuming you want the 'name' field from the 'staff' reference
-      .populate('location', 'locationName') // Assuming you want the 'locationName' field from the 'location' reference
+      .populate('staff', 'name')
+      .populate('location', 'locationName') 
       .exec();
 
     console.log('Classes fetched:', allClasses);

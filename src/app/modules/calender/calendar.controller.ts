@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import Appointment from '../contact/appoinment.model';  // Assuming your Appointment model is located here
-import Client from '../contact/client.model';  // Assuming your Client model is located here
-import Staff from '../staff/staff.model';    // Assuming your Staff model is located here
-import Lead from '../contact/leads.model';      // Assuming your Lead model is located here
+import Appointment from '../contact/appoinment.model';
+import Client from '../contact/client.model'; 
+import Staff from '../staff/staff.model';   
+import Lead from '../contact/leads.model';     
 import Event from '../event/event.model';
 import Class from '../class/class.model';
 import moment from 'moment';
 
 
-// Book an appointment
 export const bookAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { clientId, service, staffId, leadId, date, time } = req.body;
 
@@ -192,33 +191,26 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
 
   export const getFilteredData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Extract query parameters for filtering
       const { type, staffId, locationName, className, service, date, startDate, endDate } = req.query;
-  
-      // Prepare filter object for appointments, events, and classes
+
       const filter: any = {};
-  
-      // Filter by staffId if provided
+
       if (staffId) {
         filter.staff = staffId;
       }
-  
-      // Filter by locationName if provided
+
       if (locationName) {
         filter.locationName = locationName;
       }
-  
-      // Filter by className if provided (for Event or Class models)
+
       if (className) {
-        filter.name = className; // Assuming 'name' is the class name in your schema
+        filter.name = className;
       }
   
-      // Filter by service if provided (for Appointment model)
       if (service) {
         filter.service = service;
       }
   
-      // Filter by date if provided (for Event and Appointment models)
       if (date) {
         const eventDate = new Date(date as string);
         if (isNaN(eventDate.getTime())) {
@@ -228,7 +220,6 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
         filter.eventDate = eventDate;
       }
   
-      // Filter by startDate and endDate for range filtering
       if (startDate && endDate) {
         const start = new Date(startDate as string);
         const end = new Date(endDate as string);
@@ -238,21 +229,17 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
         }
         filter.eventDate = { $gte: start, $lte: end };
       }
-  
-      // If type is provided, we only fetch that specific type of data (event, appointment, or class)
       if (type) {
         let result: any;
-  
-        // Fetch data based on the provided type
         if (type === 'event') {
-          result = await Event.find(filter).populate('staff');  // Fetch Events with the filter
+          result = await Event.find(filter).populate('staff'); 
         } else if (type === 'appointment') {
-          result = await Appointment.find(filter).populate('staff contact lead');  // Fetch Appointments with the filter
+          result = await Appointment.find(filter).populate('staff contact lead');
         } else if (type === 'class') {
           result = await Class.find(filter)
-            .populate('staff')  // Populate staff reference
-            .populate('location')  // Populate location reference
-            .populate('lead');  // Populate lead reference
+            .populate('staff')  
+            .populate('location') 
+            .populate('lead'); 
         } else {
           res.status(400).json({ message: "Invalid type specified. Choose between 'event', 'appointment', or 'class'" });
           return;
@@ -266,29 +253,26 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
         return;
       }
   
-      // If no type is provided, return data for all types
-      const events = await Event.find(filter).populate('staff');  // Fetch Events with the filter
-      const appointments = await Appointment.find(filter).populate('staff contact lead');  // Fetch Appointments with the filter
+      const events = await Event.find(filter).populate('staff'); 
+      const appointments = await Appointment.find(filter).populate('staff contact lead');  
       const classes = await Class.find(filter)
-        .populate('staff')  // Populate staff reference
-        .populate('location')  // Populate location reference
-        .populate('lead');  // Populate lead reference
+        .populate('staff') 
+        .populate('location') 
+        .populate('lead'); 
   
-      // Prepare the response data
       const result = {
         events,
         appointments,
         classes
       };
-  
-      // Respond with filtered data for all types
+
       res.status(200).json({
         success: true,
         message: 'Filtered data fetched successfully.',
         data: result
       });
     } catch (error) {
-      console.error("Error fetching data:", error);  // Log error for debugging
+      console.error("Error fetching data:", error); 
       res.status(500).json({ message: 'Error fetching filtered data', error: error });
     }
   };

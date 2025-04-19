@@ -1,13 +1,11 @@
-// src/app/controllers/contact.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import nodemailer from 'nodemailer';
 import moment from 'moment';
-import Client from './client.model'; // Ensure the path is correct
+import Client from './client.model';
 import Lead from './leads.model';
 
-// // Configure Nodemailer transport (SMTP configuration)
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // or use your SMTP service
+  service: 'gmail',
   auth: {
     user: 'azizulhoq4305@gmail.com',
     pass: 'igidksaeqbnfqkeh'
@@ -80,7 +78,6 @@ const transporter = nodemailer.createTransport({
 export const sendEmailToLeadOrClients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { timeInterval, subject, message, leadId } = req.body;
 
-  // Validation for subject and message
   if (!subject || !message) {
      res.status(400).json({
       success: false,
@@ -91,7 +88,6 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
 
   try {
     if (leadId) {
-      // If a leadId is provided, send email to that specific lead
       const lead = await Lead.findById(leadId);
       if (!lead) {
          res.status(404).json({
@@ -111,13 +107,12 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       }
 
       const mailOptions = {
-        from: 'azizulhoq4305@gmail.com',  // Use your email or environment config for "from" email
-        to: leadEmail,  // Send email to the lead's email
+        from: 'azizulhoq4305@gmail.com',
+        to: leadEmail,  
         subject: subject,
         text: message,
       };
 
-      // Send email using Nodemailer
       await transporter.sendMail(mailOptions);
 
        res.status(200).json({
@@ -126,10 +121,8 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       });
       return;
     } else {
-      // If no leadId is provided, find clients based on the time interval
       let dateFilter;
 
-      // Determine the date filter based on the timeInterval provided
       if (timeInterval === '1 week') {
         dateFilter = moment().subtract(1, 'weeks').toDate();
       } else if (timeInterval === '1 month') {
@@ -137,16 +130,15 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       } else if (timeInterval === '1 year') {
         dateFilter = moment().subtract(1, 'years').toDate();
       } else if (timeInterval === 'all') {
-        dateFilter = null;  // No filter for "all"
+        dateFilter = null;  
       } else {
          res.status(400).json({ success: false, message: 'Invalid time interval.' });
          return;
       }
 
-      // Find clients based on the time interval
       let clients;
       if (dateFilter) {
-        clients = await Client.find({ createdAt: { $gte: dateFilter } });  // Find clients created after the calculated date
+        clients = await Client.find({ createdAt: { $gte: dateFilter } }); 
       } else {
         clients = await Client.find();  // All clients
       }
@@ -160,12 +152,12 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       const emailPromises = clients.map(async (client) => {
         const clientEmail = client.client_email;
         if (!clientEmail) {
-          console.error(`Client ${client.client_name} does not have an email address.`);  // Skip clients without email
+          console.error(`Client ${client.client_name} does not have an email address.`); 
           return;
         }
 
         const mailOptions = {
-          from: 'azizulhoq4305@gmail.com',  // Use your email or environment config for "from" email
+          from: 'azizulhoq4305@gmail.com',  
           to: clientEmail,
           subject: subject,
           text: message,
@@ -185,6 +177,6 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       return;
     }
   } catch (err) {
-    next(err);  // Pass the error to the global error handler
+    next(err); 
   }
 };

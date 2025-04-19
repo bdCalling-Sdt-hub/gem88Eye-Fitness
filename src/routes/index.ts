@@ -13,7 +13,7 @@ import AppointmentRoutes from '../app/modules/contact/appoinment.routes';
 import ClassRoutes from '../app/modules/class/class.Route';
 import EventRoutes from '../app/modules/event/event.routes';
 import NotificationRoutes from '../app/modules/notification/notification.Routes';
-import CalendarRoutes from '../app/modules/calender/appoinment.Routes';
+import CalendarRoutes from '../app/modules/calender/calendar.Routes';
 
 const router = express.Router();
 

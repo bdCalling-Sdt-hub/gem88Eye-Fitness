@@ -53,9 +53,9 @@ export interface IRole extends Document {
   resetPasswordOTP: string;
   resetPasswordExpires: Date;
   role: string;
-  image?: string; // Optional field for image
-  createdAt?: Date; // Add createdAt property
-  accessControls: string[]; // Array of strings to store page names
+  image?: string; 
+  createdAt?: Date; 
+  accessControls: string[]; 
   password?: string;
 }
 
@@ -86,7 +86,7 @@ const RoleSchema = new Schema<IRole>(
       default: [
         "calendar", "services", "invoice", "contact", 
         "reports", "payroll-reporting", "settings"
-      ] // Pre-store all pages by default
+      ] 
     },
     password: { type: String, required: false },
   },

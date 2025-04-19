@@ -277,7 +277,7 @@ export const forgetPassword = async (req: Request, res: Response) => {
 
     const otp = crypto.randomInt(100000, 999999).toString();
 
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const otpExpires = new Date(Date.now() + 20 * 60 * 1000); // 10 minutes expiry
 
     user.resetPasswordOTP = otp;
     user.resetPasswordExpires = otpExpires;
@@ -530,7 +530,7 @@ export const updateLocation = async (req: Request, res: Response) => {
     const {
       locationName,
       address,
-      region,  // region is an array of strings containing state/city
+      region,  
       locationType,
       hourRate,
       hours,
@@ -542,21 +542,18 @@ export const updateLocation = async (req: Request, res: Response) => {
       email,
       mobileNumber,
       workType,
-      removeFields = [] // Fields to remove
+      removeFields = [] 
     } = req.body;
 
-    // Ensure that region is provided and it's an array
     if (region && !Array.isArray(region)) {
       return res.status(400).json({ message: "Region must be an array of states/cities." });
     }
 
-    // Prepare the update object
     const updateData: any = {};
 
-    // Add fields to be updated
     if (locationName) updateData.locationName = locationName;
     if (address) updateData.address = address;
-    if (region) updateData.region = region;  // Directly updating the region (state/city)
+    if (region) updateData.region = region; 
     if (locationType) updateData.locationType = locationType;
     if (hourRate) updateData.hourRate = hourRate;
     if (hours) updateData.hours = hours;
@@ -569,13 +566,11 @@ export const updateLocation = async (req: Request, res: Response) => {
     if (mobileNumber) updateData.mobileNumber = mobileNumber;
     if (workType) updateData.workType = workType;
 
-    // Prepare fields to be removed
     const unsetData: any = {};
     removeFields.forEach((field: string) => {
       unsetData[field] = "";
     });
 
-    // Update the location in the database
     const updatedLocation = await Location.findByIdAndUpdate(
       locationId,
       { $set: updateData, $unset: unsetData },
@@ -604,15 +599,14 @@ export const updateLocationStatus = async (req: Request, res: Response) => {
   try {
     const { locationId, status } = req.body;
 
-    // Validate the status
+
     if (!status || !['active', 'inactive'].includes(status)) {
       return res.status(400).json({ message: "Invalid status. Must be 'active' or 'inactive'." });
     }
 
-    // Update the status only, without triggering validation for other fields like description
     const result = await Location.updateOne(
-      { _id: locationId },  // Filter by locationId
-      { $set: { status } }   // Only update the status field
+      { _id: locationId },  
+      { $set: { status } }  
     );
 
     if (result.modifiedCount === 0) {
@@ -629,16 +623,14 @@ export const updateLocationStatus = async (req: Request, res: Response) => {
 
 export const deleteLocation = async (req: Request, res: Response) => {
   try {
-    const { locationId } = req.params;  // Location ID from URL params
+    const { locationId } = req.params;  
 
-    // Find the location by ID
     const location = await Location.findById(locationId);
     
     if (!location) {
       return res.status(404).json({ message: "Location not found." });
     }
 
-    // Delete the location
     await Location.findByIdAndDelete(locationId);
 
     return res.status(200).json({
@@ -680,13 +672,11 @@ export const deleteLocation = async (req: Request, res: Response) => {
 
 export const getAllLocations = async (req: Request, res: Response) => {
   try {
-    // Get the status and workType filters from the query parameters (if provided)
+  
     const { status, workType } = req.query;
 
-    // Build the query based on the filters
     const query: any = {};
 
-    // Validate and add status filter to query
     if (status) {
       if (status !== 'active' && status !== 'inactive') {
         return res.status(400).json({ message: "Invalid status. Please use 'active' or 'inactive'." });
@@ -694,7 +684,6 @@ export const getAllLocations = async (req: Request, res: Response) => {
       query.status = status;
     }
 
-    // Validate and add workType filter to query
     if (workType) {
       if (workType !== 'online' && workType !== 'offline') {
         return res.status(400).json({ message: "Invalid workType. Please use 'online' or 'offline'." });
@@ -702,10 +691,8 @@ export const getAllLocations = async (req: Request, res: Response) => {
       query.workType = workType;
     }
 
-    // Fetch locations from the database based on the query
     const locations = await Location.find(query);
 
-    // Return the filtered locations
     return res.status(200).json(locations);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching locations", error: (error as Error).message });

@@ -1,4 +1,3 @@
-// src/app/routes/leadRoutes.ts
 import express from 'express';
 import { addLead, deleteLead, getAllLeads, getLeadById, updateLead, updateLeadsFromCsv, updateLeadStatus } from './leads.controller';
 

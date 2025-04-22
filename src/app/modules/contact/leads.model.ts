@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 interface ILead extends Document {
-  lead_name: string;
+  name: string;
   lead_email: string;
   address: string;
   gender: string;
@@ -14,7 +14,7 @@ interface ILead extends Document {
 }
 
 const leadSchema: Schema = new Schema({
-  lead_name: { type: String, required: true },
+  name: { type: String, required: true },
   lead_email: { type: String, required: true },
   address: { type: String, required: true },
   gender: { type: String, required: true },

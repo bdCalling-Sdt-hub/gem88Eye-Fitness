@@ -3,6 +3,7 @@ import { Router } from "express";
 import { createPaymentReport } from "./paymentReport.controller";
 import { authenticateAdmin } from "../../middlewares/auth";
 import { createInstructor, createMilesDetails, createWorkDetails, getAllDataByInstructorId, getInstructorById, getInstructors, getMilesDetails, getWorkDetails } from "./work.model/work.controller";
+import { getAllReportsOV, getOverviewReport } from "./overview.controller";
 
 const ReportRoutes = Router();
 
@@ -14,6 +15,8 @@ ReportRoutes.post("/milesdetails",authenticateAdmin ,createMilesDetails);
 ReportRoutes.get("/milesdetails/",authenticateAdmin ,getMilesDetails);
 ReportRoutes.get("/instructor",authenticateAdmin ,getInstructors);
 ReportRoutes.get("/instructor/:id",authenticateAdmin ,getInstructorById);
+ReportRoutes.get("/getoverview",authenticateAdmin,getOverviewReport)
+ReportRoutes.get("/payroll-home",getAllReportsOV)
 ReportRoutes.get("/inalldetails/:instructorId",authenticateAdmin ,getAllDataByInstructorId);
 
 

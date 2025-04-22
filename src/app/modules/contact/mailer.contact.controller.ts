@@ -152,7 +152,7 @@ export const sendEmailToLeadOrClients = async (req: Request, res: Response, next
       const emailPromises = clients.map(async (client) => {
         const clientEmail = client.client_email;
         if (!clientEmail) {
-          console.error(`Client ${client.client_name} does not have an email address.`); 
+          console.error(`Client ${client.name} does not have an email address.`); 
           return;
         }
 

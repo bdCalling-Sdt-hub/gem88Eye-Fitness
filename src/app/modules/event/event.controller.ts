@@ -87,7 +87,6 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
     }
   };
   
-
 export const updateEvent = async (req: Request, res: Response, next: NextFunction) => {
   const { eventId } = req.params; 
   const { name, location, startTime, duration, frequency, totalCapacity, staff, status } = req.body;

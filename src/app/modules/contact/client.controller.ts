@@ -2,16 +2,16 @@ import { NextFunction } from "express";
 import { Request, Response } from "express";
 import Client from './client.model'; 
 export const addClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { client_name, client_email, address, gender, phone } = req.body;
+    const { name, client_email, address, gender, phone } = req.body;
   
-    if (!client_name || !client_email || !address || !gender || !phone) {
+    if (!name || !client_email || !address || !gender || !phone) {
        res.status(400).json({ success: false, message: 'All fields are required!' });
        return
     }
   
     try {
       const newClient = new Client({
-        client_name,
+        name,
         client_email,
         address,
         gender,
@@ -51,7 +51,7 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
 
   export const updateClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;  
-    const { client_name, client_email, address, gender, phone } = req.body;
+    const { name, client_email, address, gender, phone } = req.body;
   
     try {
       const clientToUpdate = await Client.findById(id);
@@ -60,7 +60,7 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
          res.status(404).json({ success: false, message: 'Client not found!' });
          return;
       }
-      if (client_name) clientToUpdate.client_name = client_name;
+      if (name) clientToUpdate.name = name;
       if (client_email) clientToUpdate.client_email = client_email;
       if (address) clientToUpdate.address = address;
       if (gender) clientToUpdate.gender = gender;

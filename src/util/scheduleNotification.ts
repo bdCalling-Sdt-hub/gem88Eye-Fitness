@@ -1,8 +1,9 @@
 import schedule from 'node-schedule';
 import Notification from '../app/modules/notification/notification.model';
-import Admin  from '../app/modules/Admin/admin.model';
-import  Staff  from '../app/modules/staff/staff.model';
+import Admin from '../app/modules/Admin/admin.model';
+import Staff from '../app/modules/staff/staff.model';
 import Lead from '../app/modules/contact/leads.model';
+
 export const scheduleNotification = async (
   userId: string, 
   message: string, 
@@ -12,13 +13,40 @@ export const scheduleNotification = async (
   sendImmediately: boolean = false
 ) => {
   try {
+    console.log("Scheduling notification for userId:", userId);
+
+    let user;
+    
+    user = await Admin.findById(userId);
+    if (user) {
+      console.log("Found Admin:", user);
+    } else {
+      user = await Staff.findById(userId);
+      if (user) {
+        console.log("Found Staff:", user);
+      } else {
+
+        user = await Lead.findById(userId);
+        if (user) {
+          console.log("Found Lead:", user);
+        }
+      }
+    }
+
+    if (!user) {
+      console.error(`Invalid userId: ${userId} does not exist in any model.`);
+      throw new Error(`Invalid userId: User does not exist in any model for ${userId}`);
+    }
+
     // Create the notification in the database
     const notification = await Notification.create({
       userId,
+      userModel: user instanceof Admin ? 'Admin' : user instanceof Staff ? 'Staff' : 'Lead',
       message,
       scheduledTime,
       type,
-      isRead: false
+      isRead: false,
+      isSent: false,
     });
 
     // If sendImmediately is true, emit the notification right away
@@ -33,7 +61,7 @@ export const scheduleNotification = async (
         if (io) {
           io.to(userId).emit('notification', notification);
         }
-        
+
         // Update the notification as sent
         await Notification.findByIdAndUpdate(notification._id, { 
           isSent: true 
@@ -48,7 +76,9 @@ export const scheduleNotification = async (
   }
 };
 
-// Function to handle admin notifications for classes and appointments
+
+
+
 export const createAdminNotifications = async (
   eventName: string,
   eventType: 'Appointment' | 'Class',

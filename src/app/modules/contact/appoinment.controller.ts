@@ -13,191 +13,83 @@ import Admin from '../Admin/admin.model';
 import moment from 'moment';
 
 
-
 // export const bookAppointment = async (
 //   req: Request<{}, {}, AppointmentRequestBody>,
 //   res: Response,
 //   next: NextFunction
 // ): Promise<void> => {
 //   const { contactName, service, staffId, leadId, date, time } = req.body;
-
 //   if (!contactName || !service || !staffId || !leadId || !date || !time) {
 //     res.status(400).json({ success: false, message: 'All fields are required!' });
 //     return;
 //   }
-
+  
 //   try {
 //     const client = await Client.findOne({ client_name: contactName });
 //     const staff = await Staff.findById(staffId);
 //     const lead = await Lead.findById(leadId);
-
-//     if (!client || !staff || !lead) {
-//       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
-//       return;
-//     }
-
-//     const appointmentDateTime = new Date(`${date}T${time}`);
-//     if (isNaN(appointmentDateTime.getTime())) {
-//       res.status(400).json({ success: false, message: 'Invalid date or time format' });
-//       return;
-//     }
-
-//     // Determine the status based on the appointment date and time
-//     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
-
-//     const newAppointment = new Appointment({
-//       contact: client._id,
-//       service,
-//       staff: staff._id,
-//       lead: lead._id,
-//       date,
-//       time,
-//       status, // Add status here
-//     });
-
-//     await newAppointment.save();
-
-//     // Create notifications for the staff and client
-//     const notificationMessage = `You have a new appointment for ${service}`;
-//     const notificationDate = new Date(appointmentDateTime);
-
-//     const notificationData = [
-//       { userId: client._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Appointment' },
-//       { userId: staff._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Appointment' }
-//     ];
-
-//     await Notification.insertMany(notificationData);
-
-//     // Schedule notifications 1 day before and 1 hour before
-//     const io = req.app.get('io');
-//     const times = [
-//       new Date(appointmentDateTime.getTime() - 24 * 60 * 60 * 1000), // 1 day before
-//       new Date(appointmentDateTime.getTime() - 60 * 60 * 1000), // 1 hour before
-//     ];
-
-//     // Client reminder notifications
-//     scheduleNotification(
-//       client._id as string,
-//       `Reminder: Appointment for ${service}`,
-//       times,
-//       'Appointment',
-//       io,
-//       'Admin'
-//     );
-
-//     // Staff reminder notifications
-//     scheduleNotification(
-//       staff._id as string,
-//       `Reminder: You have an appointment for ${service} with ${contactName}`,
-//       times,
-//       'Appointment',
-//       io,
-//       'Staff'
-//     );
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Appointment booked and notifications sent!',
-//       data: newAppointment,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
-// export const bookAppointment = async (
-//   req: Request<{}, {}, AppointmentRequestBody>,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   const { contactName, service, staffId, leadId, date, time } = req.body;
-
-//   if (!contactName || !service || !staffId || !leadId || !date || !time) {
-//     res.status(400).json({ success: false, message: 'All fields are required!' });
-//     return;
-//   }
-
-//   try {
-//     const client = await Client.findOne({ client_name: contactName });
-//     const staff = await Staff.findById(staffId);
-//     const lead = await Lead.findById(leadId);
-
-//     if (!client || !staff || !lead) {
-//       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
-//       return;
-//     }
-
-//     const appointmentDateTime = new Date(`${date}T${time}`);
-//     if (isNaN(appointmentDateTime.getTime())) {
-//       res.status(400).json({ success: false, message: 'Invalid date or time format' });
-//       return;
-//     }
-
-//     // Determine the status based on the appointment date and time
-//     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
-
-//     const newAppointment = new Appointment({
-//       contact: client._id,
-//       service,
-//       staff: staff._id,
-//       lead: lead._id,
-//       date,
-//       time,
-//       status, // Add status here
-//     });
-
-//     await newAppointment.save();
-
-//     // Create notifications for the staff, client, and lead
-//     const notificationMessage = `You have a new appointment for ${service}`;
-//     const notificationDate = new Date(appointmentDateTime);
-
-//     const notificationData = [
-//       { userId: client._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Appointment' },
-//       { userId: staff._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Appointment' },
-//       { userId: lead._id, message: notificationMessage, scheduledTime: notificationDate, type: 'Appointment' }
-//     ];
-
-//     await Notification.insertMany(notificationData);
-
-//     // Schedule notifications 1 day before and 1 hour before
-//     const io = req.app.get('io');
-//     const times = [
-//       new Date(appointmentDateTime.getTime() - 24 * 60 * 60 * 1000), // 1 day before
-//       new Date(appointmentDateTime.getTime() - 60 * 60 * 1000), // 1 hour before
-//     ];
-
-//     // Client reminder notifications
-//     scheduleNotification(
-//       client._id as string,
-//       `Reminder: Appointment for ${service}`,
-//       times,
-//       'Appointment',
-//       io,
-//       'Admin'
-//     );
-
-//     // Staff reminder notifications
-//     scheduleNotification(
-//       staff._id as string,
-//       `Reminder: You have an appointment for ${service} with ${contactName}`,
-//       times,
-//       'Appointment',
-//       io,
-//       'Staff'
-//     );
-
-//     // Optionally, create admin notifications
-//     const adminNotificationMessage = `A new appointment for ${service} has been booked with client ${contactName}`;
-//     const adminNotificationData = {
-//       userId: 'admin-id', // Replace with the actual admin ID
-//       message: adminNotificationMessage,
-//       scheduledTime: notificationDate,
-//       type: 'Appointment'
-//     };
     
-//     await Notification.create(adminNotificationData);
-
+//     if (!client || !staff || !lead) {
+//       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
+//       return;
+//     }
+    
+//     const appointmentDateTime = new Date(`${date}T${time}`);
+//     if (isNaN(appointmentDateTime.getTime())) {
+//       res.status(400).json({ success: false, message: 'Invalid date or time format' });
+//       return;
+//     }
+    
+//     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
+    
+//     const newAppointment = new Appointment({
+//       contact: client._id,
+//       service,
+//       staff: staff._id,
+//       lead: lead._id,
+//       date,
+//       time,
+//       status,
+//     });
+    
+//     await newAppointment.save();
+    
+//     createAdminNotifications(
+//       service,
+//       'Appointment',
+//       appointmentDateTime,
+//       req.app.get('io') 
+//     );
+    
+//     const notificationMessage = `You have a new appointment for ${service}`;
+    
+//     const clientNotification = scheduleNotification(
+//       (client._id as mongoose.Types.ObjectId).toString(),
+//       notificationMessage,
+//       new Date(),
+//       'Appointment',
+//       req.app.get('io'),
+//       true
+//     );
+    
+//     const staffNotification = scheduleNotification(
+//       (staff._id as mongoose.Types.ObjectId).toString(),
+//       notificationMessage,
+//       new Date(),
+//       'Appointment',
+//       req.app.get('io'),
+//       true
+//     );
+    
+//     const leadNotification = scheduleNotification(
+//       (lead._id as mongoose.Types.ObjectId).toString(),
+//       notificationMessage,
+//       new Date(),
+//       'Appointment',
+//       req.app.get('io'),
+      
+//     );
+    
 //     res.status(201).json({
 //       success: true,
 //       message: 'Appointment booked and notifications sent!',
@@ -207,8 +99,6 @@ import moment from 'moment';
 //     next(err);
 //   }
 // };
-
-
 
 export const bookAppointment = async (
   req: Request<{}, {}, AppointmentRequestBody>,
@@ -216,29 +106,35 @@ export const bookAppointment = async (
   next: NextFunction
 ): Promise<void> => {
   const { contactName, service, staffId, leadId, date, time } = req.body;
+  
   if (!contactName || !service || !staffId || !leadId || !date || !time) {
     res.status(400).json({ success: false, message: 'All fields are required!' });
     return;
   }
   
   try {
-    const client = await Client.findOne({ client_name: contactName });
+    // Find the client, staff, and lead based on IDs
+    const client = await Client.findOne({ name: contactName });
     const staff = await Staff.findById(staffId);
     const lead = await Lead.findById(leadId);
     
+    // Check if client, staff, or lead are not found
     if (!client || !staff || !lead) {
       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
       return;
     }
     
+    // Create a valid date-time for the appointment
     const appointmentDateTime = new Date(`${date}T${time}`);
     if (isNaN(appointmentDateTime.getTime())) {
       res.status(400).json({ success: false, message: 'Invalid date or time format' });
       return;
     }
     
+    // Determine the status of the appointment
     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
     
+    // Create a new appointment document
     const newAppointment = new Appointment({
       contact: client._id,
       service,
@@ -249,43 +145,47 @@ export const bookAppointment = async (
       status,
     });
     
-    await newAppointment.save();
+    await newAppointment.save(); // Save the appointment to the database
     
+    // Call function to create admin notifications
     createAdminNotifications(
       service,
       'Appointment',
       appointmentDateTime,
-      req.app.get('io') 
+      req.app.get('io')
     );
     
+    // Define the notification message
     const notificationMessage = `You have a new appointment for ${service}`;
     
-    const clientNotification = scheduleNotification(
-      (client._id as mongoose.Types.ObjectId).toString(),
-      notificationMessage,
-      new Date(),
-      'Appointment',
-      req.app.get('io'),
-      true
-    );
+    // // Schedule the notification for the client
+    // const clientNotification = scheduleNotification(
+    //   (client._id as mongoose.Types.ObjectId).toString(),
+    //   notificationMessage,
+    //   new Date(),
+    //   'Appointment',
+    //   req.app.get('io'),
+    //   true 
+    // );
     
-    const staffNotification = scheduleNotification(
-      (staff._id as mongoose.Types.ObjectId).toString(),
-      notificationMessage,
-      new Date(),
-      'Appointment',
-      req.app.get('io'),
-      true
-    );
+    // // Schedule the notification for the staff
+    // const staffNotification = scheduleNotification(
+    //   (staff._id as mongoose.Types.ObjectId).toString(),
+    //   notificationMessage,
+    //   new Date(),
+    //   'Appointment',
+    //   req.app.get('io'),
+    //   true // send immediately
+    // );
     
-    const leadNotification = scheduleNotification(
-      (lead._id as mongoose.Types.ObjectId).toString(),
-      notificationMessage,
-      new Date(),
-      'Appointment',
-      req.app.get('io'),
-      
-    );
+    // const leadNotification = scheduleNotification(
+    //   (lead._id as mongoose.Types.ObjectId).toString(),
+    //   notificationMessage,
+    //   new Date(),
+    //   'Appointment',
+    //   req.app.get('io'),
+    //   true 
+    // );
     
     res.status(201).json({
       success: true,
@@ -296,26 +196,34 @@ export const bookAppointment = async (
     next(err);
   }
 };
+
 const createAdminNotifications = async (appointment: any, p0: string, appointmentDateTime: Date, p1: any) => {
   try {
     const admins = await Admin.find();
 
-    const notificationMessage = `A new appointment has been booked for service: ${appointment.service} with client: ${appointment.contact.name}`;
+    const notificationMessage = `A new appointment has been booked for service: ${appointment.service} with lead: ${appointment.lead}`;
+
     const notificationDate = new Date();
 
     const notificationData = admins.map(admin => ({
-      userId: admin._id,
-      message: notificationMessage,
+      userId: admin._id,           
+      userModel: 'Admin',           
+      message: notificationMessage,  
       scheduledTime: notificationDate,
-      type: 'Appointment'
+      type: 'Appointment',          
+      isRead: false,               
+      isSent: false                 
     }));
 
     await Notification.insertMany(notificationData);
+
+    console.log('Admin notifications created successfully');
   } catch (err) {
     console.error('Error creating admin notifications:', err);
     throw new Error('Error creating admin notifications');
   }
 };
+
 
 export const updateAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { appointmentId } = req.params;  // Get appointmentId from URL parameters

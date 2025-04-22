@@ -9,23 +9,22 @@ import Appointment from './appoinment.model';
 import { emailHelper } from '../../../helpers/emailHelper';
 import Class from '../class/class.model';
 export const addLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { lead_name, lead_email, address, gender, phone, staff, lead } = req.body;
+  const { name, lead_email, address, gender, phone, staff, lead } = req.body;
 
-  // Validation for required fields (lead_name, lead_email, address, gender, phone)
-  if (!lead_name || !lead_email || !address || !gender || !phone) {
+  if (!name || !lead_email || !address || !gender || !phone) {
     res.status(400).json({ success: false, message: 'All fields are required!' });
     return;
   }
 
   try {
     const newLead = new Lead({
-      lead_name,
+      name,
       lead_email,
       address,
       gender,
       phone,
-      staff,  // Optional field, no error if not provided
-      lead    // Optional field, no error if not provided
+      staff,  
+      lead   
     });
 
     await newLead.save();
@@ -112,9 +111,9 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
     fs.createReadStream(filePath)
       .pipe(csvParser())
       .on('data', async (row) => {
-        const { lead_name, lead_email, address, gender, phone } = row;
+        const { name, lead_email, address, gender, phone } = row;
 
-        if (lead_name && lead_email && address && gender && phone) {
+        if (name && lead_email && address && gender && phone) {
           try {
             const existingLead = await Lead.findOne({ lead_email });
 
@@ -123,14 +122,14 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
 
               const updatedLead = await Lead.findOneAndUpdate(
                 { lead_email },
-                { lead_name, address, gender, phone },
+                { name, address, gender, phone },
                 { new: true }
               );
               leadsData.push(updatedLead); 
               leadsExist.push(updatedLead); 
             } else {
               const newLead = new Lead({
-                lead_name,
+                name,
                 lead_email,
                 address,
                 gender,
@@ -169,7 +168,7 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
 };
 export const updateLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { leadId } = req.params; 
-  const { lead_name, lead_email, address, gender, phone, staff, lead } = req.body;
+  const { name, lead_email, address, gender, phone, staff, lead } = req.body;
 
   try {
 
@@ -178,7 +177,7 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
        res.status(404).json({ success: false, message: 'Lead not found!' });
        return
     }
-    if (lead_name) leadToUpdate.lead_name = lead_name;
+    if (name) leadToUpdate.name = name;
     if (lead_email) leadToUpdate.lead_email = lead_email;
     if (address) leadToUpdate.address = address;
     if (gender) leadToUpdate.gender = gender;
@@ -278,7 +277,7 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
   try {
     const lead = await Lead.findById(leadId)
       .populate('staff', 'name') 
-      .populate('lead', 'lead_name'); 
+      .populate('lead', 'name'); 
 
     if (!lead) {
       res.status(404).json({ success: false, message: 'Lead not found' });
@@ -287,11 +286,11 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
 
     const appointments = await Appointment.find({ lead: leadId })
       .populate('staff', 'name')
-      .populate('lead', 'lead_name');
+      .populate('lead', 'name');
 
     const classes = await Class.find({ lead: leadId })
       .populate('staff', 'name')
-      .populate('lead', 'lead_name')
+      .populate('lead', 'name')
       .populate('schedule', 'date'); 
 
     if (appointments.length === 0 && classes.length === 0) {

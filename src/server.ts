@@ -30,7 +30,7 @@ async function main() {
     //     colors.yellow(`♻️  Application listening on port:${config.port}`)
     //   );
     // });
-    server = app.listen(port, "10.0.70.208", () => { //ip issues
+    server = app.listen(port, () => { //ip issues
       logger.info(colors.yellow(`♻️  Application listening on port:${port}`));
     });
     

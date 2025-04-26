@@ -228,7 +228,6 @@ export const getAdminProfile = async (req: Request, res: Response) => {
   try {
     const admin = req.admin;
 
-    console.log('Admin in request:', admin);
 
     if (!admin) {
       return res.status(400).json({ message: "Admin is not authenticated" });

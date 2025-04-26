@@ -118,8 +118,7 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
             const existingLead = await Lead.findOne({ lead_email });
 
             if (existingLead) {
-              console.log(`Lead with email ${lead_email} already exists. Updating the lead.`);
-
+              // console.log(`Lead with email ${lead_email} already exists. Updating the lead.`);
               const updatedLead = await Lead.findOneAndUpdate(
                 { lead_email },
                 { name, address, gender, phone },

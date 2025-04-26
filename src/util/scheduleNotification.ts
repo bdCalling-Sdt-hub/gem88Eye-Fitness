@@ -13,7 +13,6 @@ export const scheduleNotification = async (
   sendImmediately: boolean = false
 ) => {
   try {
-    console.log("Scheduling notification for userId:", userId);
 
     let user;
     

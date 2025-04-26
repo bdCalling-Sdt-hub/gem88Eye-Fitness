@@ -34,7 +34,6 @@ const apiRoutes = [
 ];
 
 apiRoutes.forEach(route => {
-  console.log(`Registering route: /api/v1${route.path}`);
   router.use(route.path, route.route);
 });
 

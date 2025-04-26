@@ -210,7 +210,6 @@ const createAdminNotifications = async (appointment: any, p0: string, appointmen
 
     await Notification.insertMany(notificationData);
 
-    console.log('Admin notifications created successfully');
   } catch (err) {
     console.error('Error creating admin notifications:', err);
     throw new Error('Error creating admin notifications');

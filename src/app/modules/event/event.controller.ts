@@ -338,7 +338,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
 ): Promise<void> => {
   try {
     const { location, dateRange } = req.query;
-    console.log('Location query param:', location);
 
     const { startDate, endDate } = getDateRange(dateRange as string);
     const now = new Date();
@@ -352,7 +351,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
         locationName: new RegExp(String(location), 'i') // match location name case-insensitively
       }).select('_id locationName');
 
-      console.log('Found location document:', locationDoc);
 
       if (locationDoc) {
         appointmentLocationFilter = { location: locationDoc._id };
@@ -368,7 +366,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
         });
 
         if (eventWithLocation) {
-          console.log('Found event with this location:', eventWithLocation.name);
         } else {
           res.status(400).json({
             success: false,

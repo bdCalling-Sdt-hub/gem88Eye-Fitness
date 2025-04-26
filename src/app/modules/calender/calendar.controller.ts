@@ -22,19 +22,16 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
     const lead = await Lead.findById(leadId);
 
     if (!client) {
-      console.log(`Client not found with clientId: ${clientId}`);
       res.status(404).json({ success: false, message: 'Client not found' });
       return;
     }
 
     if (!staff) {
-      console.log(`Staff not found with staffId: ${staffId}`);
       res.status(404).json({ success: false, message: 'Staff not found' });
       return;
     }
 
     if (!lead) {
-      console.log(`Lead not found with leadId: ${leadId}`);
       res.status(404).json({ success: false, message: 'Lead not found' });
       return;
     }

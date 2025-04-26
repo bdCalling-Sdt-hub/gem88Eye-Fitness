@@ -113,28 +113,23 @@ export const bookAppointment = async (
   }
   
   try {
-    // Find the client, staff, and lead based on IDs
     const client = await Client.findOne({ name: contactName });
     const staff = await Staff.findById(staffId);
     const lead = await Lead.findById(leadId);
-    
-    // Check if client, staff, or lead are not found
+
     if (!client || !staff || !lead) {
       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
       return;
     }
-    
-    // Create a valid date-time for the appointment
+  
     const appointmentDateTime = new Date(`${date}T${time}`);
     if (isNaN(appointmentDateTime.getTime())) {
       res.status(400).json({ success: false, message: 'Invalid date or time format' });
       return;
     }
     
-    // Determine the status of the appointment
     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
     
-    // Create a new appointment document
     const newAppointment = new Appointment({
       contact: client._id,
       service,
@@ -145,9 +140,8 @@ export const bookAppointment = async (
       status,
     });
     
-    await newAppointment.save(); // Save the appointment to the database
+    await newAppointment.save();
     
-    // Call function to create admin notifications
     createAdminNotifications(
       service,
       'Appointment',
@@ -155,7 +149,6 @@ export const bookAppointment = async (
       req.app.get('io')
     );
     
-    // Define the notification message
     const notificationMessage = `You have a new appointment for ${service}`;
     
     // // Schedule the notification for the client
@@ -226,21 +219,18 @@ const createAdminNotifications = async (appointment: any, p0: string, appointmen
 
 
 export const updateAppointment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { appointmentId } = req.params;  // Get appointmentId from URL parameters
+  const { appointmentId } = req.params;  
   const { contactName, service, staffId, leadId, date, time } = req.body;
 
   try {
-    // Find the appointment by ID
     const appointment = await Appointment.findById(appointmentId);
 
-    // If appointment not found, return a 404 error
     if (!appointment) {
        res.status(404).json({ success: false, message: 'Appointment not found!' });
         return
     }
 
-    // Fetch the contact (Client), staff, and lead for validation
-    const client = await Client.findOne({ client_name: contactName });
+    const client = await Client.findOne({name: contactName});
     const staff = await Staff.findById(staffId);
     const lead = await Lead.findById(leadId);
 
@@ -249,25 +239,22 @@ export const updateAppointment = async (req: Request, res: Response, next: NextF
         return
     }
 
-    // Update the fields with the provided values
-    if (contactName) appointment.contact = client._id as mongoose.Types.ObjectId; // Explicit cast to ObjectId
+    if (contactName) appointment.contact = client._id as mongoose.Types.ObjectId;
     if (service) appointment.service = service;
-    if (staffId) appointment.staff = staff._id as mongoose.Types.ObjectId;  // Explicit cast to ObjectId
-    if (leadId) appointment.lead = lead._id as mongoose.Types.ObjectId;    // Explicit cast to ObjectId
+    if (staffId) appointment.staff = staff._id as mongoose.Types.ObjectId;  
+    if (leadId) appointment.lead = lead._id as mongoose.Types.ObjectId;    
     if (date) appointment.date = date;
     if (time) appointment.time = time;
 
-    // Save the updated appointment
     await appointment.save();
 
-    // Return the updated appointment
     res.status(200).json({
       success: true,
       message: 'Appointment updated successfully!',
       data: appointment,
     });
   } catch (err) {
-    next(err);  // Pass error to the global error handler
+    next(err);  
   }
 };
 
@@ -303,22 +290,23 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   
 
       if (filter) {
-        const regex = { $regex: filter, $options: 'i' }; //case insensitive
+        const regex = { $regex: filter, $options: 'i' }; 
   
         filterQuery['$or'] = [
           { 'staff.name': regex },
-          { 'contact.contactName': regex }, 
+          { 'contact.name': regex }, 
+          { 'lead.name': regex },
+          { 'location.locationName': regex },         
           { service: regex },
           { date: regex },
           { time: regex }
         ];
       }
   
-      // Fetch all appointments based on the constructed filter query
       const allAppointments = await Appointment.find(filterQuery)
         .populate('staff', 'name')
-        .populate('contact', 'contactName')  
-        .populate('lead', 'leadName')  
+        .populate('contact', 'name')  
+        .populate('lead', 'name')  
         .exec();
   
       if (!allAppointments || allAppointments.length === 0) {
@@ -384,13 +372,11 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   
 
   export const deleteAppoinment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const appointmentId = req.params.id;  // Get the client ID from the URL
+    const appointmentId = req.params.id;  
   
     try {
-      // Try to find and remove the client by ID
       const deletedAppoinment = await Appointment.findByIdAndDelete(appointmentId);
   
-      // If the client is not found
       if (!appointmentId) {
          res.status(404).json({
           success: false,
@@ -398,14 +384,14 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
         });
       }
   
-      // Return success message
+
       res.status(200).json({
         success: true,
         message: 'Appoinment deleted successfully!',
         data: deletedAppoinment
       });
     } catch (err) {
-      next(err); // Pass the error to the global error handler
+      next(err);
     }
   };
 

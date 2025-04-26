@@ -13,12 +13,13 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
         duration,
         frequency,
         totalCapacity,
+        workType,
         staff,
         status,
         eventDate,
       } = req.body;
   
-      if (!name || !location || !startTime || !duration || !frequency || !totalCapacity || !staff || !eventDate) {
+      if (!name || !location || !startTime || !duration || !frequency || !totalCapacity|| !workType || !staff || !eventDate) {
         return res.status(400).json({ message: 'Please provide all required fields' });
       }
   
@@ -68,6 +69,7 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
         frequency,
         eventDate,
         totalCapacity,
+        workType,
         staff,
         status: status || 'active',
         recurrenceSchedule,

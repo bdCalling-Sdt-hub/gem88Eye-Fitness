@@ -1,41 +1,7 @@
-// // src/app/models/Invoice.ts
-// import mongoose, { Document, Schema } from 'mongoose';
-
-// interface IInvoice extends Document {
-//   invoiceId: string;
-//   client: string;
-//   className: string;
-//   contactName: string;
-//   services: string;
-//   invoiceTotal: number;
-//   invoiceNumber: string;
-//   active: boolean; 
-//   invoiceDate: Date;
-//   invoiceDueDate: Date;
-// }
-
-// const invoiceSchema: Schema = new Schema({
-//   invoiceId: { type: String, required: true },
-//   client: { type: String, required: true },
-//   className: { type: String, required: true },
-//   contactName: { type: String, required: true },
-//   services: { type: String, required: true },
-//   invoiceTotal: { type: Number, required: true },
-//   invoiceNumber: { type: String, required: true },
-//   active: { type: Boolean, default: true },
-//   invoiceDate: { type: Date, required: true },
-//   invoiceDueDate: { type: Date, required: true },
-// });
-
-// const Invoice = mongoose.model<IInvoice>('Invoice', invoiceSchema);
-
-// export default Invoice;
-
-
 import mongoose, { Document, Schema } from 'mongoose';
 
 interface IInvoice extends Document {
-  invoiceId: string;
+  // invoiceId: string;
   client: string; 
   className: string;
   contactName: string;
@@ -48,7 +14,7 @@ interface IInvoice extends Document {
 }
 
 const invoiceSchema: Schema = new Schema({
-  invoiceId: { type: String, required: true },
+  // invoiceId: { type: String, required: true },
   client: { type: String, required: true }, 
   className: { type: String, required: true },
   contactName: { type: String, required: true },

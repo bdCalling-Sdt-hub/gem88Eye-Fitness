@@ -317,7 +317,7 @@ export const getAllClasses = async (req: Request, res: Response, next: NextFunct
     console.log('Using filter:', filter);  
 
     const classes = await Class.find(filter)
-      .populate('lead', 'lead_name')
+      .populate('lead', 'name')
       .populate('staff', 'name')
       .populate('schedule', 'date')
       .populate('location'); 
@@ -450,25 +450,24 @@ export const getClassById = async (req: Request, res: Response, next: NextFuncti
 //     next(err); 
 //   }
 // };
+
 export const getClassStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { filter, status, date, location, staff, className,lead } = req.query;
-    const filterQuery: any = {}; 
-
-    console.log('Received filters:', req.query);
-
+    const { filter, status, date, locationName, staff, className, lead } = req.query;
+    const filterQuery: any = {};
+    
+    // Handle text search filter using $or
     if (filter) {
       const filterText = filter.toString().trim();
-
-      filterQuery['name'] = { $regex: filterText, $options: 'i' }; 
-      filterQuery['description'] = { $regex: filterText, $options: 'i' }; 
-
-
-      filterQuery['staff.name'] = { $regex: filterText, $options: 'i' };
-
-      filterQuery['location.locationName'] = { $regex: filterText, $options: 'i' };
+      filterQuery['$or'] = [
+        { 'name': { $regex: filterText, $options: 'i' } },
+        { 'description': { $regex: filterText, $options: 'i' } },
+        { 'staff.name': { $regex: filterText, $options: 'i' } },
+        { 'location.locationName': { $regex: filterText, $options: 'i' } }
+      ];
     }
-
+    
+    // Handle status filter correctly
     if (status) {
       if (status === 'running') {
         filterQuery['status'] = 'active';
@@ -476,22 +475,40 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
         filterQuery['status'] = 'inactive';
       }
     }
-
+    
+    // Handle specific locationName filter
+    if (locationName) {
+      filterQuery['location.locationName'] = locationName;
+    }
+    
+    if (staff) {
+      filterQuery['staff.name'] = staff;
+    }
+    
+    if (className) {
+      filterQuery['name'] = className;
+    }
+    
+    if (lead) {
+      filterQuery['lead.lead_name'] = lead;
+    }
+    
+    // Handle date filter
     if (date) {
       const selectedDate = moment(typeof date === 'string' ? date : '').startOf('day');
       filterQuery['schedule.date'] = { $gte: selectedDate.toDate() };
     }
-
+    
     console.log('Constructed filter query:', filterQuery);
-
+    
     const allClasses = await Class.find(filterQuery)
       .populate('lead', 'lead_name')
       .populate('staff', 'name')
-      .populate('location', 'locationName') 
+      .populate('location', 'locationName')
       .exec();
-
+    
     console.log('Classes fetched:', allClasses);
-
+    
     if (!allClasses || allClasses.length === 0) {
       res.status(404).json({
         success: false,
@@ -499,17 +516,17 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
       });
       return;
     }
-
+    
     const currentDate = moment();
     let runningClassesCount = 0;
     let completedClassesCount = 0;
     let notRunningClassesCount = 0;
-
+    
     allClasses.forEach((classItem) => {
       classItem.schedule.forEach((session) => {
         const sessionDate = moment(session.date);
         const isClassActive = classItem.status === 'active';
-
+        
         if (sessionDate.isBefore(currentDate) && !isClassActive) {
           completedClassesCount++;
         } else if (isClassActive && sessionDate.isSameOrAfter(currentDate)) {
@@ -519,7 +536,7 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
         }
       });
     });
-
+    
     res.status(200).json({
       success: true,
       message: 'Classes fetched successfully.',
@@ -536,6 +553,91 @@ export const getClassStats = async (req: Request, res: Response, next: NextFunct
     next(err);
   }
 };
+// export const getClassStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//   try {
+//     const { filter, status, date, locationName, staff, className,lead } = req.query;
+//     const filterQuery: any = {}; 
+
+
+//     if (filter) {
+//       const filterText = filter.toString().trim();
+
+//       filterQuery['name'] = { $regex: filterText, $options: 'i' }; 
+//       filterQuery['description'] = { $regex: filterText, $options: 'i' }; 
+
+
+//       filterQuery['staff.name'] = { $regex: filterText, $options: 'i' };
+
+//       filterQuery['location.locationName'] = { $regex: filterText, $options: 'i' };
+//     }
+
+//     if (status) {
+//       if (status === 'running') {
+//         filterQuery['status'] = 'active';
+//       } else if (status === 'not running') {
+//         filterQuery['status'] = 'inactive';
+//       }
+//     }
+
+//     if (date) {
+//       const selectedDate = moment(typeof date === 'string' ? date : '').startOf('day');
+//       filterQuery['schedule.date'] = { $gte: selectedDate.toDate() };
+//     }
+
+//     console.log('Constructed filter query:', filterQuery);
+
+//     const allClasses = await Class.find(filterQuery)
+//       .populate('lead', 'lead_name')
+//       .populate('staff', 'name')
+//       .populate('location', 'locationName') 
+//       .exec();
+
+//     console.log('Classes fetched:', allClasses);
+
+//     if (!allClasses || allClasses.length === 0) {
+//       res.status(404).json({
+//         success: false,
+//         message: 'No classes found.',
+//       });
+//       return;
+//     }
+
+//     const currentDate = moment();
+//     let runningClassesCount = 0;
+//     let completedClassesCount = 0;
+//     let notRunningClassesCount = 0;
+
+//     allClasses.forEach((classItem) => {
+//       classItem.schedule.forEach((session) => {
+//         const sessionDate = moment(session.date);
+//         const isClassActive = classItem.status === 'active';
+
+//         if (sessionDate.isBefore(currentDate) && !isClassActive) {
+//           completedClassesCount++;
+//         } else if (isClassActive && sessionDate.isSameOrAfter(currentDate)) {
+//           runningClassesCount++;
+//         } else if (!isClassActive && sessionDate.isSameOrAfter(currentDate)) {
+//           notRunningClassesCount++;
+//         }
+//       });
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       message: 'Classes fetched successfully.',
+//       data: {
+//         totalClasses: allClasses.length,
+//         runningClassesCount,
+//         completedClassesCount,
+//         notRunningClassesCount,
+//         classesData: allClasses,
+//       },
+//     });
+//   } catch (err) {
+//     console.error('Error occurred:', err);
+//     next(err);
+//   }
+// };
 
 
 export const updateClassStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

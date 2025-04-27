@@ -74,7 +74,7 @@ export const assignRole = async (req: Request, res: Response) => {
         <h3>Hello ${name},</h3>
         <p>You have been assigned the role of <strong>${role}</strong> in our system.</p>
         <p>Please set your password and access your account.</p>
-        <p>Click the link to set your password: <a href="http://10.0.70.208:8080/api/v1/staff/set-password">Set Password</a></p>
+        <p>Click the link to set your password: <a href="http://72.167.224.54:8081/auth/login">Set Password</a></p>
         <p>Best Regards,</p>
         <p>A New Fitness Team</p>
       `,

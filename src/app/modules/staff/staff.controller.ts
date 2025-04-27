@@ -525,7 +525,7 @@ export const staffLogin = async (req: Request, res: Response) => {
         address: user.address,
         email: user.email,
         role: user.role,
-        image: user.image,
+        image: user.image || 'https://i.ibb.co/z5YHLV9/profile.png',
         accessControls: user.accessControls,
        
       };

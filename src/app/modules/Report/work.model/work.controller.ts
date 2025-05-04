@@ -7,24 +7,47 @@ import mongoose from 'mongoose';
 import { populate } from 'dotenv';
 import moment from 'moment';
 
+// const isDateWithinPeriod = async (instructorId: string, workDate: Date): Promise<boolean> => {
+//     try {
+//       const instructor = await mongoose.model('Instructor').findById(instructorId);
+      
+//       if (!instructor) {
+//         throw new Error("Instructor not found");
+//       }
+      
+//       const periodBeginning = new Date(instructor.periodBeginning);
+//       const periodEnding = new Date(instructor.periodEnding);
+//       const date = new Date(workDate);
+      
+//       return date >= periodBeginning && date <= periodEnding;
+//     } catch (error) {
+//       console.error("Error checking date validity:", error);
+//       throw error;
+//     }
+//   };
 const isDateWithinPeriod = async (instructorId: string, workDate: Date): Promise<boolean> => {
-    try {
-      const instructor = await mongoose.model('Instructor').findById(instructorId);
-      
-      if (!instructor) {
-        throw new Error("Instructor not found");
-      }
-      
-      const periodBeginning = new Date(instructor.periodBeginning);
-      const periodEnding = new Date(instructor.periodEnding);
-      const date = new Date(workDate);
-      
-      return date >= periodBeginning && date <= periodEnding;
-    } catch (error) {
-      console.error("Error checking date validity:", error);
-      throw error;
+  try {
+    const instructor = await mongoose.model('Instructor').findById(instructorId);
+    
+    if (!instructor) {
+      throw new Error("Instructor not found");
     }
-  };
+    
+    const periodBeginning = new Date(instructor.periodBeginning);
+    const periodEnding = new Date(instructor.periodEnding);
+    const date = new Date(workDate);
+    
+    // Normalize to UTC if the dates are timezone sensitive
+    periodBeginning.setUTCHours(0, 0, 0, 0); // Set the start to midnight UTC
+    periodEnding.setUTCHours(23, 59, 59, 999); // Set the end to the last millisecond of the day in UTC
+    date.setUTCHours(0, 0, 0, 0); // Normalize work date
+
+    return date >= periodBeginning && date <= periodEnding;
+  } catch (error) {
+    console.error("Error checking date validity:", error);
+    throw error;
+  }
+};
 
 export const createInstructor = async (req: Request, res: Response) => {
     try {
@@ -46,7 +69,6 @@ export const createInstructor = async (req: Request, res: Response) => {
     }
   };
   
-  
   export const getInstructors = async (req: Request, res: Response) => {
     try {
      
@@ -60,7 +82,6 @@ export const createInstructor = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Error fetching instructors' });
     }
   };
-
   export const getInstructorById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -155,6 +176,99 @@ export const createWorkDetails = async (req: Request, res: Response) => {
     }
   };
   
+  export const createWeek1WorkDetails = async (req: Request, res: Response) => {
+    try {
+      const { instructorId, workDetails } = req.body;
+  
+      // Ensure that the instructor has a period beginning and ending date set
+      const instructor = await InstructorDetails.findById(instructorId);
+      if (!instructor) {
+        return res.status(400).json({ message: "Instructor not found." });
+      }
+
+      const periodBeginning = new Date(instructor.periodBeginning);
+      const periodEnding = new Date(instructor.periodEnding);
+
+      // Calculate the start and end of Week 1 (first 7 days from periodBeginning)
+      const week1Start = periodBeginning;
+      const week1End = new Date(periodBeginning);
+      week1End.setDate(week1Start.getDate() + 7); // Add 7 days to periodBeginning for Week 1 end date
+
+      // Check if the work date falls within Week 1
+      const workDate = new Date(workDetails.date);
+      if (workDate < week1Start || workDate > week1End) {
+        return res.status(400).json({ message: "The work date must be within the Week 1 period." });
+      }
+  
+      // Check if a work detail already exists for this date in Week 1
+      const existingWorkDetail = await WorkDetails.findOne({ 
+        instructor: instructorId, 
+        "workDetails.date": workDetails.date 
+      });
+  
+      if (existingWorkDetail) {
+        return res.status(400).json({ message: "Work details for this date already exist in Week 1." });
+      }
+
+      const newWorkDetails = new WorkDetails({
+        workDetails,
+        instructor: instructorId,
+      });
+  
+      await newWorkDetails.save();
+      return res.status(201).json(newWorkDetails);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Error creating Week 1 work details' });
+    }
+};
+
+export const createWeek2WorkDetails = async (req: Request, res: Response) => {
+  try {
+    const { instructorId, workDetails } = req.body;
+
+    // Ensure that the instructor has a period beginning and ending date set
+    const instructor = await InstructorDetails.findById(instructorId);
+    if (!instructor) {
+      return res.status(400).json({ message: "Instructor not found." });
+    }
+
+    const periodBeginning = new Date(instructor.periodBeginning);
+    const periodEnding = new Date(instructor.periodEnding);
+
+    const week2Start = new Date(periodBeginning);
+    week2Start.setDate(periodBeginning.getDate() + 7); 
+
+    const week2End = periodEnding;  
+
+    const workDate = new Date(workDetails.date);
+    if (workDate < week2Start || workDate > week2End) {
+      return res.status(400).json({ message: "The work date must be within the Week 2 period." });
+    }
+
+    // Check if a work detail already exists for this date in Week 2
+    const existingWorkDetail = await WorkDetails.findOne({ 
+      instructor: instructorId, 
+      "workDetails.date": workDetails.date 
+    });
+
+    if (existingWorkDetail) {
+      return res.status(400).json({ message: "Work details for this date already exist in Week 2." });
+    }
+
+    const newWorkDetails = new WorkDetails({
+      workDetails,
+      instructor: instructorId,
+    });
+
+    await newWorkDetails.save();
+    return res.status(201).json(newWorkDetails);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error creating Week 2 work details' });
+  }
+};
+
 
   export const getWorkDetails = async (req: Request, res: Response) => {
     try {

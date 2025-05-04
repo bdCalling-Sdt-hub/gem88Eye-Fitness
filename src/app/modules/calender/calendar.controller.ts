@@ -86,106 +86,6 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   };
 
 
-  // export const getFilteredData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     // Extract query parameters for filtering
-  //     const { type, staffId, locationName, className, service, date, startDate, endDate} = req.query;
-  
-  //     // Prepare filter object for appointments, events, and classes
-  //     const filter: any = {};
-  
-  //     // Filter by staffId if provided
-  //     if (staffId) {
-  //       filter.staff = staffId;
-  //     }
-  
-  //     // Filter by locationName if provided
-  //     if (locationName) {
-  //       filter.locationName = locationName;
-  //     }
-  
-  //     // Filter by className if provided (for Event or Class models)
-  //     if (className) {
-  //       filter.name = className; // Assuming 'name' is the class name in your schema
-  //     }
-  
-  //     // Filter by service if provided (for Appointment model)
-  //     if (service) {
-  //       filter.service = service;
-  //     }
-  
-
-  
-  //     // Filter by date if provided (for Event and Appointment models)
-  //     if (date) {
-  //       const eventDate = new Date(date as string);
-  //       if (isNaN(eventDate.getTime())) {
-  //          res.status(400).json({ message: "Invalid date format" });
-  //       }
-  //       filter.eventDate = eventDate;
-  //     }
-  
-  //     // Filter by startDate and endDate for range filtering
-  //     if (startDate && endDate) {
-  //       const start = new Date(startDate as string);
-  //       const end = new Date(endDate as string);
-  //       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-  //          res.status(400).json({ message: "Invalid start or end date format" });
-  //       }
-  //       filter.eventDate = { $gte: start, $lte: end };
-  //     }
-  
-    
-  //     // If type is provided, we only fetch that specific type of data (event, appointment, or class)
-  //     if (type) {
-  //       let result: any;
-  
-  //       // Fetch data based on the provided type
-  //       if (type === 'event') {
-  //         result = await Event.find(filter).populate('staff');  // Fetch Events with the filter
-  //       } else if (type === 'appointment') {
-  //         result = await Appointment.find(filter).populate('staff contact lead');  // Fetch Appointments with the filter
-  //       } else if (type === 'class') {
-  //         result = await Class.find(filter);  // Fetch Classes with the filter (assuming class model exists)
-  //       } else {
-  //          res.status(400).json({ message: "Invalid type specified. Choose between 'event', 'appointment', or 'class'" });
-  //         return;
-  //       }
-        
-  
-  //        res.status(200).json({
-  //         success: true,
-  //         message: `${type.charAt(0).toUpperCase() + type.slice(1)} data fetched successfully.`,
-  //         data: result
-  //       });
-  //     }
-  
-  //     // If no type is provided, return data for all types
-  //     const events = await Event.find(filter).populate('staff');  // Fetch Events with the filter
-  //     const appointments = await Appointment.find(filter).populate('staff contact lead');  // Fetch Appointments with the filter
-  //     const classes = await Class.find(filter)
-  //     .populate('class', 'name');
-  
-  //     // Prepare the response data
-  //     const result = {
-  //       events,
-  //       appointments,
-  //       classes
-  //     };
-  
-  //     // Respond with filtered data for all types
-  //      res.status(200).json({
-  //       success: true,
-  //       message: 'Filtered data fetched successfully.',
-  //       data: result
-  //     });
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);  // Log error for debugging
-  //      res.status(500).json({ message: 'Error fetching filtered data', error: error });
-  //   }
-  // };
-
-
   export const getFilteredData = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { type, staffId, locationName, className, service, date, startDate, endDate } = req.query;
@@ -273,4 +173,85 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
       res.status(500).json({ message: 'Error fetching filtered data', error: error });
     }
   };
+ 
+  export const allCalendar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { type, staffId, locationName, className, service, date, startDate, endDate } = req.query;
+
+      const filter: any = {};
+
+      if (staffId) {
+        filter.staff = staffId;
+      }
+
+      if (locationName) {
+        filter.locationName = locationName;
+      }
+
+      if (className) {
+        filter.name = className;
+      }
+  
+      if (service) {
+        filter.service = service;
+      }
+  
+      if (date) {
+        const eventDate = new Date(date as string);
+        if (isNaN(eventDate.getTime())) {
+          res.status(400).json({ message: "Invalid date format" });
+          return;
+        }
+        filter.eventDate = eventDate;
+      }
+  
+      if (startDate && endDate) {
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          res.status(400).json({ message: "Invalid start or end date format" });
+          return;
+        }
+        filter.eventDate = { $gte: start, $lte: end };
+      }
+
+      let result: any = [];
+  
+      if (type) {
+        if (type === 'event') {
+          result = await Event.find(filter).populate('staff'); 
+        } else if (type === 'appointment') {
+          result = await Appointment.find(filter).populate('staff contact lead');
+        } else if (type === 'class') {
+          result = await Class.find(filter)
+            .populate('staff')  
+            .populate('location') 
+            .populate('lead'); 
+        } else {
+          res.status(400).json({ message: "Invalid type specified. Choose between 'event', 'appointment', or 'class'" });
+          return;
+        }
+      } else {
+        const events = await Event.find(filter).populate('staff'); 
+        const appointments = await Appointment.find(filter).populate('staff contact lead');  
+        const classes = await Class.find(filter)
+          .populate('staff') 
+          .populate('location') 
+          .populate('lead'); 
+
+        result = [...events, ...appointments, ...classes];
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Filtered data fetched successfully.',
+        data: result
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error); 
+      res.status(500).json({ message: 'Error fetching filtered data', error: error });
+    }
+  };
+
+
   

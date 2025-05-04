@@ -5,261 +5,155 @@ import { Parser } from "json2csv";
 import Class from "../class/class.model";
 import  Staff  from '../staff/staff.model'; 
 import moment from 'moment';
-// export const exportCSV = async (req: Request, res: Response) => {
-//     try {
-//       const { staffName, filterType } = req.query;
-  
-//       if (!staffName) {
-//         return res.status(400).json({ message: "staffName query parameter is required" });
-//       }
-  
-//       // Get date filter based on the provided type (biweekly, monthly, yearly)
-//       const dateFilter = filterType ? getDateFilter(filterType as string) : {};
-  
-//       // Fetch Payment Reports
-//       const paymentReports = await PaymentReport.find({
-//         staffName: staffName,
-//         ...(filterType && { periodBeginning: dateFilter }),
-//       });
-  
-//       // Fetch Miles Reports
-//       const milesReports = await MilesReport.find({
-//         staffName: staffName,
-//         ...(filterType && { createdAt: dateFilter }),
-//       });
-  
-//       if (paymentReports.length === 0 && milesReports.length === 0) {
-//         return res.status(404).json({ message: "No reports found for the given staffName" });
-//       }
-  
-//       // Prepare CSV data
-//       const csvData = paymentReports.map((report) => {
-//         const totalWorkingHours = report.workDetails.reduce((sum, work) => sum + work.hours, 0);
-//         const totalWorkAmount = report.workDetails.reduce(
-//           (sum, work) => sum + work.hours * work.hourRate,
-//           0
-//         );
-  
-//         // Find corresponding miles report for the same instructor
-//         const milesReport = milesReports.find((m) => m.staffName === report.staffName);
-//         const totalMiles = milesReport
-//           ? milesReport.milesDetails.reduce((sum, m) => sum + (m.miles || 0), 0)
-//           : 0;
-//         const mileageRate = milesReport
-//           ? milesReport.milesDetails.reduce((sum, m) => sum + (m.mileRate || 0), 0) /
-//             (milesReport.milesDetails.length || 1)
-//           : 0;
-  
-//         return {
-//           InstructorName: report.staffName,
-//           PeriodBeginning: report.periodBeginning.toISOString(),
-//           PeriodEnding: report.periodEnding.toISOString(),
-//           TotalWorkingHours: totalWorkingHours,
-//           TotalWorkAmount: totalWorkAmount.toFixed(2),
-//           TotalMiles: totalMiles,
-//           MileageRate: mileageRate.toFixed(2),
-//           TotalAmount: (totalWorkAmount + totalMiles * mileageRate).toFixed(2),
-//         };
-//       });
-  
-//       // Convert JSON to CSV
-//       const json2csvParser = new Parser({ fields: Object.keys(csvData[0]) });
-//       const csv = json2csvParser.parse(csvData);
-  
-//       // Send response as downloadable CSV
-//       res.setHeader("Content-Type", "text/csv");
-//       res.setHeader(
-//         "Content-Disposition",
-//         `attachment; filename=${staffName}_report.csv`
-//       );
-//       res.status(200).send(csv);
-//     } catch (error) {
-//       console.error("Error exporting CSV:", error);
-//       return res.status(500).json({ message: "Error exporting CSV", error });
-//     }
-//   };
+import WorkDetails from "./work.model/workdetails.model";
+import Instructor from "./work.model/instructor.model";
+import MilesDetails from "./work.model/miles.model";
+import { Location } from "../Admin/location.model"; 
 
-// Function to filter reports based on time range
-// const getDateFilter = (filter: string) => {
-//   const currentDate = new Date();
-//   let startDate: Date;
-//   let endDate: Date;
+export const getOverviewReport = async (req: Request, res: Response) => {
+  try {
+    const { filterType, instructorName } = req.query;
 
-//   if (filter === "biweekly") {
-//     const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
-//     const currentWeek = Math.floor((currentDate.getTime() - startOfYear.getTime()) / (1000 * 3600 * 24 * 7));
-//     const startWeek = new Date(startOfYear.getTime() + (currentWeek * 1000 * 3600 * 24 * 7));
-//     startDate = new Date(startWeek);
-//     endDate = new Date(startWeek.getTime() + (14 * 24 * 60 * 60 * 1000));
-//   } else if (filter === "monthly") {
-//     startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-//     endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-//   } else if (filter === "yearly") {
-//     startDate = new Date(currentDate.getFullYear(), 0, 1); 
-//     endDate = new Date(currentDate.getFullYear() + 1, 0, 0); 
-//   } else {
-//     startDate = new Date("2000-01-01");
-//     endDate = new Date();
-//   }
+    const getDateFilter = (filter: string) => {
+      const currentDate = new Date();
+      let startDate: Date;
+      let endDate: Date;
 
-//   startDate.setHours(0, 0, 0, 0);
-//   endDate.setHours(23, 59, 59, 999); 
+      if (filter === "biweekly") {
+        const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
+        const currentWeek = Math.floor((currentDate.getTime() - startOfYear.getTime()) / (1000 * 3600 * 24 * 7));
+        const startWeek = new Date(startOfYear.getTime() + (currentWeek * 1000 * 3600 * 24 * 7));
+        startDate = new Date(startWeek);
+        endDate = new Date(startWeek.getTime() + (14 * 24 * 60 * 60 * 1000));
+      } else if (filter === "monthly") {
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); 
+      } else if (filter === "yearly") {
+        startDate = new Date(currentDate.getFullYear(), 0, 1);
+        endDate = new Date(currentDate.getFullYear() + 1, 0, 0);
+      } else {
+        startDate = new Date(); 
+        endDate = new Date();
+      }
 
-//   return { $gte: startDate, $lte: endDate };
-// };
+      return { $gte: startDate, $lte: endDate };
+    };
 
-  
-// export const getOverviewReport = async (req: Request, res: Response) => {
-//     try {
-//       const { filterType, instrtuctorName } = req.query;
-  
-//       const dateFilter = filterType ? getDateFilter(filterType as string) : {};
-  
-//       const searchQuery = instrtuctorName
-//         ? {
-//             $or: [
-//               { staffName: { $regex: instrtuctorName, $options: "i" } },
-//               { instructorName: { $regex: instrtuctorName, $options: "i" } },
-//             ],
-//           }
-//         : {};
-  
-//       let paymentReports = await PaymentReport.find({
-//         ...(filterType && { periodBeginning: dateFilter }),
-//         ...searchQuery, 
-//       });
-  
-//       let milesReports = await MilesReport.find({
-//         ...(filterType && { createdAt: dateFilter }),
-//         ...searchQuery, 
-//       });
-  
-//       let overviewData = paymentReports.map((report) => {
-//         const totalHours = report.workDetails.reduce((sum, work) => sum + work.hours, 0);
-//         const totalWorkAmount = report.workDetails.reduce(
-//           (sum, work) => sum + work.hours * work.hourRate,
-//           0
-//         );
-//         const milesReport = milesReports.find((m) => m.staffName === report.staffName);
-//         const totalMiles = milesReport
-//           ? milesReport.milesDetails.reduce((sum: any, m: { miles: any; }) => sum + (m.miles || 0), 0)
-//           : 0;
-//         const mileageRate = milesReport
-//           ? milesReport.milesDetails.reduce((sum: any, m: { mileRate: any; }) => sum + (m.mileRate || 0), 0) /
-//             (milesReport.milesDetails.length || 1)
-//           : 0;
-  
-//         return {
-//           instructorName: report.staffName,
-//           periodBeginning: report.periodBeginning,
-//           periodEnding: report.periodEnding,
-//           totalWorkingHours: totalHours,
-//           totalWorkAmount,
-//           totalMiles,
-//           mileageRate,
-//           totalAmount: totalWorkAmount + totalMiles * mileageRate,
-//         };
-//       });
-  
-//       return res.status(200).json({
-//         message: "Overview report fetched successfully",
-//         overviewData,
-//       });
-//     } catch (error) {
-//       console.error("Error fetching overview report:", error);
-//       return res.status(500).json({ message: "Error fetching overview report", error });
-//     }
-//   };
-  export const getOverviewReport = async (req: Request, res: Response) => {
-    try {
-      const { filterType, instrtuctorName } = req.query;
+    const dateFilter = filterType ? getDateFilter(filterType as string) : {};
 
-      const getDateFilter = (filter: string) => {
-        const currentDate = new Date();
-        let startDate: Date;
-        let endDate: Date;
-  
-        if (filter === "biweekly") {
-          const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
-          const currentWeek = Math.floor((currentDate.getTime() - startOfYear.getTime()) / (1000 * 3600 * 24 * 7));
-          const startWeek = new Date(startOfYear.getTime() + (currentWeek * 1000 * 3600 * 24 * 7));
-          startDate = new Date(startWeek);
-          endDate = new Date(startWeek.getTime() + (14 * 24 * 60 * 60 * 1000));
-        } else if (filter === "monthly") {
-          startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-          endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); 
-        } else if (filter === "yearly") {
-          startDate = new Date(currentDate.getFullYear(), 0, 1);
-          endDate = new Date(currentDate.getFullYear() + 1, 0, 0);
-        } else {
-          startDate = new Date(); 
-          endDate = new Date();
-        }
-  
-        return { $gte: startDate, $lte: endDate };
-      };
-  
-      const dateFilter = filterType ? getDateFilter(filterType as string) : {};
-  
-      const searchQuery = instrtuctorName
-      ? {
-          $or: [
-            { staffName: { $regex: instrtuctorName, $options: "i" } },
-            { instructorName: { $regex: instrtuctorName, $options: "i" } },
-          ],
-        }
+    // Debug log to verify the query
+    console.log("Date filter:", dateFilter);
+    
+    // First, get all instructors matching the search criteria
+    const instructorQuery = instructorName 
+      ? { instructorName: { $regex: instructorName, $options: "i" } }
       : {};
-  
-      let paymentReports = await PaymentReport.find({
-        ...(filterType && { periodBeginning: dateFilter }),
-        ...searchQuery,
+
+    // Get all instructors with their staff references populated
+    // Modified to properly populate the Staff model
+    const instructors = await Instructor.find({
+      ...(filterType && { periodBeginning: dateFilter }),
+      ...instructorQuery
+    }).populate('instructorName');
+    
+    // Debug log to check what's being returned from the instructor query
+    console.log("Instructors found:", instructors.length);
+    console.log("First instructor:", instructors[0] ? JSON.stringify(instructors[0]) : "None");
+    
+    // Get all work details for these instructors
+    const workDetailsPromises = instructors.map(instructor => 
+      WorkDetails.find({ instructor: instructor._id })
+    );
+    const allWorkDetails = await Promise.all(workDetailsPromises);
+    
+    // Get all miles details for these instructors
+    const milesDetailsPromises = instructors.map(instructor => 
+      MilesDetails.find({ instructor: instructor._id })
+    );
+    const allMilesDetails = await Promise.all(milesDetailsPromises);
+
+    // Combine the data for each instructor
+    let overviewData = instructors.map((instructor, index) => {
+      const workDetails = allWorkDetails[index];
+      const milesDetails = allMilesDetails[index];
+      
+      // Debug the instructor object to see what's available
+      console.log(`Instructor ${index} data:`, {
+        id: instructor._id,
+        instructorNameRef: instructor.instructorName,
+        periodBeginning: instructor.periodBeginning
       });
       
-      let milesReports = await MilesReport.find({
-        ...(filterType && { createdAt: dateFilter }),
-        ...searchQuery,
-      });
+      // Calculate total work hours and amount
+      const totalHours = workDetails.reduce((sum, work) => 
+        sum + work.workDetails.hours, 0);
       
+      const totalWorkAmount = workDetails.reduce((sum, work) => 
+        sum + (work.workDetails.hours * work.workDetails.hourRate), 0);
+      
+      // Calculate total miles and average mile rate
+      const totalMiles = milesDetails.reduce((sum, miles) => 
+        sum + (miles.milesDetails.miles || 0), 0);
+      
+      const mileageRates = milesDetails
+        .filter(m => m.milesDetails.mileRate)
+        .map(m => m.milesDetails.mileRate);
+      
+      const mileageRate = mileageRates.length > 0 
+        ? mileageRates.reduce((sum, rate) => sum + rate, 0) / mileageRates.length 
+        : 0;
+      
+      // Extract staff name handling different possible shapes of data
+      let staffName = 'Unknown';
+      
+      if (instructor.instructorName) {
+        if (typeof instructor.instructorName === 'string') {
+          // If it's just a string ID
+          staffName = instructor.instructorName;
+        } else if (typeof instructor.instructorName === 'object') {
+          // If it's a populated object
+          if ('name' in instructor.instructorName) {
+            staffName = instructor.instructorName.name as string;
+          } else if ('firstName' in instructor.instructorName && 'lastName' in instructor.instructorName) {
+            staffName = `${instructor.instructorName.firstName} ${instructor.instructorName.lastName}`;
+          } else {
+            // Try to get any field that might contain a name
+            const possibleNameFields = ['fullName', 'displayName', 'username', '_id'];
+            for (const field of possibleNameFields) {
+              if (typeof instructor.instructorName === 'object' && field in (instructor.instructorName as unknown as Record<string, unknown>) && (instructor.instructorName as unknown as Record<string, unknown>)[field]) {
+                staffName = typeof instructor.instructorName === 'object' && field in instructor.instructorName
+                  ? ((instructor.instructorName as unknown) as Record<string, unknown>)[field] as string
+                  : staffName;
+                break;
+              }
+            }
+          }
+        }
+      }
 
-      let overviewData = paymentReports.map((report) => {
-        const totalHours = report.workDetails.reduce((sum, work) => sum + work.hours, 0);
-        const totalWorkAmount = report.workDetails.reduce(
-          (sum, work) => sum + work.hours * work.hourRate,
-          0
-        );
+      return {
+        instructorName: staffName,
+        instructorId: instructor._id,
+        periodBeginning: instructor.periodBeginning,
+        periodEnding: instructor.periodEnding,
+        totalWorkingHours: totalHours,
+        totalWorkAmount,
+        totalMiles,
+        mileageRate,
+        totalAmount: totalWorkAmount + (totalMiles * mileageRate),
+      };
+    });
 
-        const milesReport = milesReports.find((m) => m.staffName === report.staffName);
-        const totalMiles = milesReport
-          ? milesReport.milesDetails.reduce((sum: any, m: { miles: any; }) => sum + (m.miles || 0), 0)
-          : 0;
-        const mileageRate = milesReport
-          ? milesReport.milesDetails.reduce((sum: any, m: { mileRate: any; }) => sum + (m.mileRate || 0), 0) /
-            (milesReport.milesDetails.length || 1)
-          : 0;
-  
-        return {
-          instructorName: report.staffName,
-          periodBeginning: report.periodBeginning,
-          periodEnding: report.periodEnding,
-          totalWorkingHours: totalHours,
-          totalWorkAmount,
-          totalMiles,
-          mileageRate,
-          totalAmount: totalWorkAmount + totalMiles * mileageRate,
-        };
-      });
-  
-      return res.status(200).json({
-        message: "Overview report fetched successfully",
-        overviewData,
-      });
-    } catch (error) {
-      console.error("Error fetching overview report:", error);
-      return res.status(500).json({ message: "Error fetching overview report", error });
-    }
-  };
-  
-  export const getAllReportsOV = async (req: Request, res: Response) => {
+    return res.status(200).json({
+      message: "Overview report fetched successfully",
+      overviewData,
+    });
+  } catch (error) {
+    console.error("Error fetching overview report:", error);
+    return res.status(500).json({ message: "Error fetching overview report", error });
+  }
+};
+export const getAllReportsOV = async (req: Request, res: Response) => {
     try {
       const { year = '2025' } = req.query; 
   

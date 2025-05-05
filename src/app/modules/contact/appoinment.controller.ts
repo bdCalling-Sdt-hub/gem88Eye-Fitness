@@ -141,45 +141,20 @@ export const bookAppointment = async (
     });
     
     await newAppointment.save();
-    
+
     createAdminNotifications(
-      service,
+      {
+        service: service,         
+        lead: (lead.name as string) || (lead._id as mongoose.Types.ObjectId).toString()
+      },
       'Appointment',
       appointmentDateTime,
       req.app.get('io')
     );
     
+    
     const notificationMessage = `You have a new appointment for ${service}`;
-    
-    // // Schedule the notification for the client
-    // const clientNotification = scheduleNotification(
-    //   (client._id as mongoose.Types.ObjectId).toString(),
-    //   notificationMessage,
-    //   new Date(),
-    //   'Appointment',
-    //   req.app.get('io'),
-    //   true 
-    // );
-    
-    // // Schedule the notification for the staff
-    // const staffNotification = scheduleNotification(
-    //   (staff._id as mongoose.Types.ObjectId).toString(),
-    //   notificationMessage,
-    //   new Date(),
-    //   'Appointment',
-    //   req.app.get('io'),
-    //   true // send immediately
-    // );
-    
-    // const leadNotification = scheduleNotification(
-    //   (lead._id as mongoose.Types.ObjectId).toString(),
-    //   notificationMessage,
-    //   new Date(),
-    //   'Appointment',
-    //   req.app.get('io'),
-    //   true 
-    // );
-    
+
     res.status(201).json({
       success: true,
       message: 'Appointment booked and notifications sent!',
@@ -190,7 +165,12 @@ export const bookAppointment = async (
   }
 };
 
-const createAdminNotifications = async (appointment: any, p0: string, appointmentDateTime: Date, p1: any) => {
+const createAdminNotifications = async (
+  appointment: { service: string; lead: string },
+  type: string,
+  appointmentDateTime: Date,
+  io: any
+) => {
   try {
     const admins = await Admin.find();
 
@@ -199,13 +179,13 @@ const createAdminNotifications = async (appointment: any, p0: string, appointmen
     const notificationDate = new Date();
 
     const notificationData = admins.map(admin => ({
-      userId: admin._id,           
-      userModel: 'Admin',           
-      message: notificationMessage,  
+      userId: admin._id,
+      userModel: 'Admin',
+      message: notificationMessage,
       scheduledTime: notificationDate,
-      type: 'Appointment',          
-      isRead: false,               
-      isSent: false                 
+      type: type,
+      isRead: false,
+      isSent: false
     }));
 
     await Notification.insertMany(notificationData);

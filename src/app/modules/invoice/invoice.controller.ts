@@ -256,6 +256,31 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
     }
   };
 
+  //delete invoice
+  export const deleteInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { invoiceId } = req.params; 
+  
+    try {
+      const deletedInvoice = await Invoice.findByIdAndDelete(invoiceId);
+  
+      if (!deletedInvoice) {
+         res.status(404).json({
+          success: false,
+          message: 'Invoice not found'
+        });
+        return
+      }
+  
+      res.status(200).json({
+        success: true,
+        message: 'Invoice deleted successfully!',
+        data: deletedInvoice
+      });
+    } catch (err) {
+      next(err); 
+    }
+  };
+
   export const getInvoicesByStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { status } = req.query; 
   

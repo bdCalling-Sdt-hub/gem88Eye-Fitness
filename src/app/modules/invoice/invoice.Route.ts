@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer'; 
-import { createSingleInvoice, updateInvoiceStatus, getInvoicesByStatus, createInvoicesFromCsv, updateInvoice } from './invoice.controller';
+import { createSingleInvoice, updateInvoiceStatus, getInvoicesByStatus, createInvoicesFromCsv, updateInvoice, deleteInvoice } from './invoice.controller';
 import { downloadAllInvoicesCSV } from './download.csv';
 
 const invoiceRoutes = express.Router();
@@ -14,5 +14,6 @@ invoiceRoutes.put('/status/:invoiceId', updateInvoiceStatus);
 invoiceRoutes.get('', getInvoicesByStatus);
 invoiceRoutes.get('/csv/download', downloadAllInvoicesCSV);
 invoiceRoutes.put('/update/:invoiceId',updateInvoice);
+invoiceRoutes.delete('/delete/:invoiceId', deleteInvoice)
 
 export default invoiceRoutes;

@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 interface ILead extends Document {
   name: string;
+  companyName: string;
   lead_email: string;
   address: string;
   gender: string;
@@ -10,11 +11,13 @@ interface ILead extends Document {
   lead: mongoose.Schema.Types.ObjectId; 
   client_email: string;
   staff: mongoose.Schema.Types.ObjectId; 
+  note: string;
   createdAt: Date;
 }
 
 const leadSchema: Schema = new Schema({
   name: { type: String, required: true },
+  companyName: { type: String, required: false },
   lead_email: { type: String, required: true },
   address: { type: String, required: true },
   gender: { type: String, required: true },
@@ -23,9 +26,9 @@ const leadSchema: Schema = new Schema({
   lead: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', required: false },
   client_email: { type: String, required: false },
   staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', required: false },
+  note: { type: String, required: false },
   createdAt: { type: Date, default: Date.now },
 });
-
 const Lead = mongoose.model<ILead>('Lead', leadSchema);
 
 export default Lead;

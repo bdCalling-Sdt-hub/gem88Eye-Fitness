@@ -29,8 +29,7 @@ export const addClient = async (req: Request, res: Response, next: NextFunction)
   export const getAllClients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
 
-      const clients = await Client.find();
-  
+      const clients = await Client.find()
   
       if (clients.length === 0) {
         res.status(404).json({

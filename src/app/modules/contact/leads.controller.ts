@@ -9,7 +9,7 @@ import Appointment from './appoinment.model';
 import { emailHelper } from '../../../helpers/emailHelper';
 import Class from '../class/class.model';
 export const addLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { name, lead_email, address, gender, phone, staff, lead } = req.body;
+  const { name, companyName,lead_email, address, gender, phone, staff, lead, note } = req.body;
 
   if (!name || !lead_email || !address || !gender || !phone) {
     res.status(400).json({ success: false, message: 'All fields are required!' });
@@ -19,12 +19,14 @@ export const addLead = async (req: Request, res: Response, next: NextFunction): 
   try {
     const newLead = new Lead({
       name,
+      companyName,
       lead_email,
       address,
       gender,
       phone,
       staff,  
-      lead   
+      lead,
+      note,
     });
 
     await newLead.save();
@@ -167,7 +169,7 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
 };
 export const updateLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { leadId } = req.params; 
-  const { name, lead_email, address, gender, phone, staff, lead } = req.body;
+  const { name, companyName,lead_email, address, gender, phone, staff, lead, note } = req.body;
 
   try {
 
@@ -183,6 +185,8 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
     if (phone) leadToUpdate.phone = phone;
     if (staff) leadToUpdate.staff = staff; 
     if (lead) leadToUpdate.lead = lead;   
+    if (note) leadToUpdate.note = note;
+    if (companyName) leadToUpdate.companyName = companyName;
 
     await leadToUpdate.save();
 

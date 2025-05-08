@@ -4,9 +4,8 @@ import csvParser from 'csv-parser';
 import fs from 'fs'; 
 import Client from '../contact/client.model';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
+const uploadCSV = fileUploadHandler(); 
 
-
-// export const createSingleInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 //     const {  clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
   
 //     if ( !clientName || !className || !contactName || !services || !invoiceTotal || !invoiceNumber || !invoiceDate || !invoiceDueDate) {
@@ -48,15 +47,59 @@ import fileUploadHandler from '../../middlewares/fileUploadHandler';
 //       next(err); 
 //     }
 //   };
+// export const createSingleInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+//   const { clientId, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
+
+//   if (!clientId || !className || !contactName || !services || !invoiceTotal || !invoiceNumber || !invoiceDate || !invoiceDueDate) {
+//     res.status(400).json({ success: false, message: 'All fields are required!' });
+//     return;
+//   }
+
+//   try {
+//     const client = await Client.findById(clientId);
+
+//     if (!client) {
+//       res.status(404).json({ success: false, message: 'Client not found' });
+//       return;
+//     }
+
+//     const clientName = client.name; 
+//     const activeStatus = client.active; 
+
+//     const newInvoice = new Invoice({
+//       client: clientName,
+//       className, 
+//       contactName,
+//       services,
+//       invoiceTotal,
+//       invoiceNumber,
+//       invoiceDate,
+//       invoiceDueDate,
+//       active: activeStatus,
+//     });
+
+//     await newInvoice.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Invoice created successfully!',
+//       data: newInvoice,
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 export const createSingleInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { clientId, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
 
+  // Validate required fields
   if (!clientId || !className || !contactName || !services || !invoiceTotal || !invoiceNumber || !invoiceDate || !invoiceDueDate) {
     res.status(400).json({ success: false, message: 'All fields are required!' });
     return;
   }
 
   try {
+    // Find client by ID to make sure it exists
     const client = await Client.findById(clientId);
 
     if (!client) {
@@ -64,12 +107,12 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
       return;
     }
 
-    const clientName = client.name; 
-    const activeStatus = client.active; 
+    const activeStatus = client.active;
 
+    // Create new invoice using the client's ObjectId, not just the name
     const newInvoice = new Invoice({
-      client: clientName,
-      className, 
+      client: client._id,  // Store the client's ObjectId, not their name
+      className,
       contactName,
       services,
       invoiceTotal,
@@ -79,18 +122,22 @@ export const createSingleInvoice = async (req: Request, res: Response, next: Nex
       active: activeStatus,
     });
 
+    // Save the invoice to the database
     await newInvoice.save();
+
+    // Return the invoice with the populated client details
+    const populatedInvoice = await Invoice.findById(newInvoice._id).populate('client');
 
     res.status(201).json({
       success: true,
       message: 'Invoice created successfully!',
-      data: newInvoice,
+      data: populatedInvoice,  // Return the populated invoice
     });
   } catch (err) {
     next(err);
   }
 };
-const uploadCSV = fileUploadHandler(); 
+
 
 export const createInvoicesFromCsv = (req: Request, res: Response, next: NextFunction): void => {
   uploadCSV(req, res, (err) => {
@@ -281,27 +328,63 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
     }
   };
 
+  // export const getInvoicesByStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   const { status } = req.query; 
+  
+  //   if (status && status !== 'true' && status !== 'false') {
+  //      res.status(400).json({
+  //       success: false,
+  //       message: 'Status must be either true or false.'
+  //     });
+  //     return
+  //   }
+  
+  //   try {
+  //     const invoices = await Invoice.find({
+  //       active: status ? JSON.parse(status) : undefined, 
+  //     });
+  
+  //     if (invoices.length === 0) {
+  //        res.status(404).json({
+  //         success: false,
+  //         message: 'No invoices found with the given status.'
+  //       });
+  //     }
+  
+  //     res.status(200).json({
+  //       success: true,
+  //       message: 'Invoices fetched successfully!',
+  //       data: invoices
+  //     });
+  //   } catch (err) {
+  //     next(err); 
+  //   }
+  // };
   export const getInvoicesByStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { status } = req.query; 
+    const { status } = req.query;
   
     if (status && status !== 'true' && status !== 'false') {
-       res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Status must be either true or false.'
       });
-      return
+      return;
     }
   
     try {
       const invoices = await Invoice.find({
-        active: status ? JSON.parse(status) : undefined, 
-      });
+        active: status ? JSON.parse(status) : undefined,
+      }).populate('client');  
+  
+      // Debugging the invoices data
+      console.log(invoices);  // Log to check if the client field is populated
   
       if (invoices.length === 0) {
-         res.status(404).json({
+        res.status(404).json({
           success: false,
           message: 'No invoices found with the given status.'
         });
+        return;
       }
   
       res.status(200).json({
@@ -310,6 +393,10 @@ export const updateInvoiceStatus = async (req: Request, res: Response, next: Nex
         data: invoices
       });
     } catch (err) {
-      next(err); 
+      next(err);
     }
   };
+  
+  
+  
+  

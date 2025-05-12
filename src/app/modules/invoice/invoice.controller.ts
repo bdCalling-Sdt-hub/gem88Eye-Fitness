@@ -4,6 +4,7 @@ import csvParser from 'csv-parser';
 import fs from 'fs'; 
 import Client from '../contact/client.model';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
+import mongoose, { ObjectId } from 'mongoose';
 const uploadCSV = fileUploadHandler(); 
 
 //     const {  clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
@@ -222,24 +223,31 @@ export const createInvoicesFromCsv = (req: Request, res: Response, next: NextFun
     processCsv();
   });
 };
+
 export const updateInvoice = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { invoiceId, clientName, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
+  const { invoiceId } = req.params; 
+  const { clientId, className, contactName, services, invoiceTotal, invoiceNumber, invoiceDate, invoiceDueDate } = req.body;
 
   try {
-    const invoice = await Invoice.findOne({ invoiceId });
+    if (!mongoose.Types.ObjectId.isValid(invoiceId)) {
+      res.status(400).json({ success: false, message: 'Invalid invoiceId' });
+      return;
+    }
+
+    const invoice = await Invoice.findById(invoiceId);
 
     if (!invoice) {
        res.status(404).json({ success: false, message: 'Invoice not found' });
-       return
+       return;
     }
 
-    if (clientName) {
-      const client = await Client.findOne({ client_name: clientName });
+    if (clientId) {
+       const client = await Client.findById(clientId);
       if (!client) {
          res.status(404).json({ success: false, message: 'Client not found' });
-         return
+         return;
       }
-      invoice.client = clientName;
+      invoice.client = client._id as mongoose.Schema.Types.ObjectId;
       invoice.active = client.active; 
     }
 
@@ -259,10 +267,9 @@ export const updateInvoice = async (req: Request, res: Response, next: NextFunct
       data: updatedInvoice,
     });
   } catch (err) {
-    next(err);  
+    next(err);
   }
 };
-
 
 export const updateInvoiceStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { invoiceId } = req.params; 

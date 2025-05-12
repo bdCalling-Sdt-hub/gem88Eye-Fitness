@@ -237,30 +237,45 @@ export const updateAppointment = async (req: Request, res: Response, next: NextF
   }
 };
 
-
 export const getAllAppointments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      // Fetch all appointments and populate associated client, staff, and lead details
-      const appointments = await Appointment.find()
-        .populate('contact')  
-        .populate('staff')  
-        .populate('lead');   
-  
-      if (!appointments || appointments.length === 0) {
-        res.status(404).json({ success: false, message: 'No appointments found' });
-        return;
-      }
-  
-      res.status(200).json({
-        success: true,
-        message: 'Appointments fetched successfully',
-        data: appointments
-      });
-    } catch (err) {
-      next(err);
+  try {
+    const appointments = await Appointment.find()
+      .populate('contact')  
+      .populate('staff')  
+      .populate('lead');   
+
+    if (!appointments || appointments.length === 0) {
+      res.status(404).json({ success: false, message: 'No appointments found' });
+      return;
     }
-  };
-  
+
+    const today = moment().startOf('day'); 
+    const updatedAppointments = appointments.map(appointment => {
+      const appointmentDate = moment(appointment.date);
+      let status = 'Upcoming'; 
+
+      if (appointmentDate.isBefore(today, 'day')) {
+        status = 'Completed'; 
+      } else if (appointmentDate.isSame(today, 'day')) {
+        status = 'Today'; 
+      }
+
+      return {
+        ...appointment.toObject(),
+        status  
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Appointments fetched successfully',
+      data: updatedAppointments
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
  
   export const getAppointmentStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {

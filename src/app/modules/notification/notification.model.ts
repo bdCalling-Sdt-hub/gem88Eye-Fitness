@@ -1,21 +1,3 @@
-// import mongoose, { Schema, Document } from 'mongoose';
-
-// export interface INotification extends Document {
-//   userId: mongoose.Types.ObjectId;
-//   message: string;
-//   scheduledTime: Date;
-//   type: string;
-// }
-
-// const NotificationSchema = new Schema<INotification>({
-//   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },  // User who is receiving the notification
-//   message: { type: String, required: true },
-//   scheduledTime: { type: Date, required: true },
-//   type: { type: String, required: true },  // Type of notification (Class, Appointment, etc.)
-// }, { timestamps: true });
-
-// export const Notification = mongoose.model<INotification>('Notification', NotificationSchema);
-
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface INotification extends Document {

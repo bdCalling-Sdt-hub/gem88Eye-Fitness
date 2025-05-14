@@ -40,58 +40,45 @@ export const getOverviewReport = async (req: Request, res: Response) => {
     };
 
     const dateFilter = filterType ? getDateFilter(filterType as string) : {};
-
-    // Debug log to verify the query
-    console.log("Date filter:", dateFilter);
-    
-    // First, get all instructors matching the search criteria
     const instructorQuery = instructorName 
       ? { instructorName: { $regex: instructorName, $options: "i" } }
       : {};
 
-    // Get all instructors with their staff references populated
-    // Modified to properly populate the Staff model
     const instructors = await Instructor.find({
       ...(filterType && { periodBeginning: dateFilter }),
       ...instructorQuery
     }).populate('instructorName');
     
-    // Debug log to check what's being returned from the instructor query
     console.log("Instructors found:", instructors.length);
     console.log("First instructor:", instructors[0] ? JSON.stringify(instructors[0]) : "None");
     
-    // Get all work details for these instructors
     const workDetailsPromises = instructors.map(instructor => 
       WorkDetails.find({ instructor: instructor._id })
     );
     const allWorkDetails = await Promise.all(workDetailsPromises);
     
-    // Get all miles details for these instructors
     const milesDetailsPromises = instructors.map(instructor => 
       MilesDetails.find({ instructor: instructor._id })
     );
     const allMilesDetails = await Promise.all(milesDetailsPromises);
 
-    // Combine the data for each instructor
     let overviewData = instructors.map((instructor, index) => {
       const workDetails = allWorkDetails[index];
       const milesDetails = allMilesDetails[index];
       
-      // Debug the instructor object to see what's available
       console.log(`Instructor ${index} data:`, {
         id: instructor._id,
         instructorNameRef: instructor.instructorName,
         periodBeginning: instructor.periodBeginning
       });
       
-      // Calculate total work hours and amount
+
       const totalHours = workDetails.reduce((sum, work) => 
         sum + work.workDetails.hours, 0);
       
       const totalWorkAmount = workDetails.reduce((sum, work) => 
         sum + (work.workDetails.hours * work.workDetails.hourRate), 0);
       
-      // Calculate total miles and average mile rate
       const totalMiles = milesDetails.reduce((sum, miles) => 
         sum + (miles.milesDetails.miles || 0), 0);
       
@@ -103,21 +90,17 @@ export const getOverviewReport = async (req: Request, res: Response) => {
         ? mileageRates.reduce((sum, rate) => sum + rate, 0) / mileageRates.length 
         : 0;
       
-      // Extract staff name handling different possible shapes of data
       let staffName = 'Unknown';
       
       if (instructor.instructorName) {
         if (typeof instructor.instructorName === 'string') {
-          // If it's just a string ID
           staffName = instructor.instructorName;
         } else if (typeof instructor.instructorName === 'object') {
-          // If it's a populated object
           if ('name' in instructor.instructorName) {
             staffName = instructor.instructorName.name as string;
           } else if ('firstName' in instructor.instructorName && 'lastName' in instructor.instructorName) {
             staffName = `${instructor.instructorName.firstName} ${instructor.instructorName.lastName}`;
           } else {
-            // Try to get any field that might contain a name
             const possibleNameFields = ['fullName', 'displayName', 'username', '_id'];
             for (const field of possibleNameFields) {
               if (typeof instructor.instructorName === 'object' && field in (instructor.instructorName as unknown as Record<string, unknown>) && (instructor.instructorName as unknown as Record<string, unknown>)[field]) {
@@ -153,6 +136,7 @@ export const getOverviewReport = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error fetching overview report", error });
   }
 };
+
 export const getAllReportsOV = async (req: Request, res: Response) => {
     try {
       const { year = '2025' } = req.query; 
@@ -245,14 +229,13 @@ export const getAllReportsOV = async (req: Request, res: Response) => {
     }
   };
   
-  export const exportReportsAsCSV = async (req: Request, res: Response, next: NextFunction) => {
-    const { timePeriod } = req.query;  // bi-weekly, monthly, yearly
+export const exportReportsAsCSV = async (req: Request, res: Response, next: NextFunction) => {
+    const { timePeriod } = req.query;  
     
     try {
       let startDate: Date;
       let endDate: Date;
   
-      // Set date range based on the selected time period
       if (timePeriod === 'bi-weekly') {
         startDate = moment().subtract(2, 'weeks').startOf('week').toDate();
         endDate = moment().toDate();
@@ -269,9 +252,8 @@ export const getAllReportsOV = async (req: Request, res: Response) => {
         });
       }
   
-      // Fetch total classes, total instructors (staff), and payment reports within the date range
-      const totalClasses = await Class.countDocuments(); // Counts all classes
-      const totalInstructors = await Staff.countDocuments(); // Counts all staff members (instructors)
+      const totalClasses = await Class.countDocuments(); 
+      const totalInstructors = await Staff.countDocuments(); 
     
       const paymentReports = await PaymentReport.find({
         date: { $gte: startDate, $lte: endDate },
@@ -295,16 +277,13 @@ export const getAllReportsOV = async (req: Request, res: Response) => {
         });
       });
   
-      // Prepare CSV headers and the data for CSV export
       const reportData = [
         { "Total Classes": totalClasses, "Total Instructors": totalInstructors, "Total Payroll Amount": totalPayrollAmount, "Total Miles Amount": totalMilesAmount },
       ];
   
-      // Prepare the CSV data
       const json2csvParser = new Parser();
       const csvData = json2csvParser.parse(reportData);
   
-      // Set the headers for the CSV file download
       res.header('Content-Type', 'text/csv');
       res.attachment(`report-${timePeriod}.csv`);
       return res.send(csvData);

@@ -14,8 +14,6 @@ ReportRoutes.post("/workdetails1",authenticateAdmin ,createWeek1WorkDetails);
 ReportRoutes.post("/workdetails2",authenticateAdmin ,createWeek2WorkDetails);
 ReportRoutes.get("/workdetail",authenticateAdmin ,getWorkDetails);
 ReportRoutes.post("/milesdetails",authenticateAdmin ,createMilesDetails);
-// ReportRoutes.post("/milesdetails1",authenticateAdmin ,createWeek1MilesDetails);
-// ReportRoutes.post("/milesdetails2",authenticateAdmin ,createWeek2MilesDetails);
 ReportRoutes.get("/milesdetails/",authenticateAdmin ,getMilesDetails);
 ReportRoutes.get("/instructor",authenticateAdmin ,getInstructors);
 ReportRoutes.get("/instructor/:id",authenticateAdmin ,getInstructorById);

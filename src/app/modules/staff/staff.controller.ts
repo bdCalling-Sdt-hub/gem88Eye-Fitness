@@ -10,39 +10,8 @@ import path from "path";
 import { emailHelper } from "../../../helpers/emailHelper";
 import StaffAvailability ,{ IStaffAvailability } from "../staff/staff.aviliability.model";
 import moment from "moment";
+const upload = fileUploadHandler();
 
-
-// export const createStaff = async (req: Request, res: Response) => {
-//   fileUploadHandler()(req, res, async (err) => {
-//     if (err) {
-//       return res.status(400).json({ message: "File upload error", error: err });
-//     }
-
-//     try {
-//       const { name, expiryDate } = req.body;
-
-//       // Check if files exist under the "doc" field and get the first file path
-//       let document: string | null = null;
-
-//       if (req.files && "doc" in req.files) {
-//         // Get the first file (since only one file is allowed)
-//         const file = (req.files["doc"] as Express.Multer.File[])[0];
-//         document = path.join('uploads', 'doc', file.filename).replace(/\\/g, '/');
-//       }
-
-//       // Create a new staff record with the document path
-//       const staff = new Staff({ name, documents: document ?? "", expiryDate, status: "valid" });
-//       await staff.save();
-
-//       res.status(201).json({
-//         message: "Staff created successfully",
-//         staff,
-//       });
-//     } catch (error) {
-//       res.status(500).json({ message: "Error creating staff", error });
-//     }
-//   });
-// };
 
 export const createStaff = async (req: Request, res: Response) => {
   fileUploadHandler()(req, res, async (err) => {
@@ -75,54 +44,6 @@ export const createStaff = async (req: Request, res: Response) => {
   });
 };
 
-// export const addStaffAvailability = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const { staffId, availability, date } = req.body; 
-
-//   if (!staffId || !availability || !Array.isArray(availability) || !date) {
-//      res.status(400).json({ success: false, message: 'Staff ID, availability, and date are required!' });
-//      return;
-//   }
-
-
-//   const parsedDate = moment(date, 'YYYY-MM-DD', true).isValid() ? moment(date).toDate() : null;
-//   if (!parsedDate) {
-//      res.status(400).json({ success: false, message: 'Invalid date format. Please provide a valid date (YYYY-MM-DD).' });
-//   }
-
-//   try {
-//     const availabilityRecords = await Promise.all(
-//       availability.map(async (dayAvailability) => {
-//         const { day, startTime, endTime } = dayAvailability;
-
-//         if (!startTime || !endTime) {
-//           return res.status(400).json({ success: false, message: 'Both startTime and endTime are required for each availability.' });
-//         }
-
-//         const newAvailability = new StaffAvailability({
-//           staff: staffId,
-//           day,
-//           date: parsedDate,
-//           startTime,
-//           endTime,
-//         });
-
-//         await newAvailability.save();
-//         return newAvailability;
-//       })
-//     );
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Staff availability added successfully!',
-//       data: availabilityRecords,
-//     });
-//   } catch (err) {
-//     next(err); 
-//   }
-// };
-
-
-// Define interfaces for request body structure
 interface TimeSlot {
   startTime: string;
   endTime: string;
@@ -151,85 +72,6 @@ interface GroupedDayAvailability {
   staffId: mongoose.Types.ObjectId;
   timeSlots: GroupedTimeSlot[];
 }
-
-// export const addStaffAvailability = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const { staffId, availability, date } = req.body as StaffAvailabilityRequest;
-
-//   if (!staffId || !availability || !Array.isArray(availability) || !date) {
-//     res.status(400).json({ success: false, message: 'Staff ID, availability, and date are required!' });
-//     return;
-//   }
-
-//   const parsedDate = moment.utc(date, 'YYYY-MM-DD', true);
-//   if (!parsedDate.isValid()) {
-//     res.status(400).json({ success: false, message: 'Invalid date format. Please provide a valid date (YYYY-MM-DD).' });
-//     return;
-//   }
-
-//   try {
-//     const availabilityRecords: IStaffAvailability[] = [];
-    
-//     for (const dayAvailability of availability) {
-//       const { day, timeSlots } = dayAvailability;
-
-//       if (!timeSlots || !Array.isArray(timeSlots)) {
-//         res.status(400).json({ success: false, message: `Time slots are required for ${day}.` });
-//         return;
-//       }
-
-//       for (const timeSlot of timeSlots) {
-//         const { startTime, endTime } = timeSlot;
-
-//         if (!startTime || !endTime) {
-//           res.status(400).json({ success: false, message: `Both startTime and endTime are required for ${day}.` });
-//           return;
-//         }
-
-//         const newAvailability = new StaffAvailability({
-//           staff: staffId,
-//           day,
-//           date: parsedDate.toDate(),
-//           startTime,
-//           endTime,
-//         });
-
-//         const savedAvailability = await newAvailability.save();
-//         availabilityRecords.push(savedAvailability);
-//       }
-//     }
-
-//     const groupedByDay: Record<string, GroupedDayAvailability> = {};
-    
-//     availabilityRecords.forEach(record => {
-//       const day = record.day;
-      
-//       if (!groupedByDay[day]) {
-//         groupedByDay[day] = {
-//           day,
-//           date: moment.utc(record.date).format('YYYY-MM-DD'),
-//           staffId: record.staff as unknown as mongoose.Types.ObjectId,
-//           timeSlots: []
-//         };
-//       }
-      
-//       groupedByDay[day].timeSlots.push({
-//         startTime: record.startTime,
-//         endTime: record.endTime,
-//         _id: record._id as mongoose.Types.ObjectId
-//       });
-//     });
-
-//     const formattedResponse = Object.values(groupedByDay);
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Staff availability added successfully!',
-//       data: formattedResponse,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
 
 export const addStaffAvailability = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { staffId, availability, date } = req.body as StaffAvailabilityRequest;
@@ -264,7 +106,6 @@ export const addStaffAvailability = async (req: Request, res: Response, next: Ne
           return;
         }
 
-        // Check if an availability record with the same staff, day, time already exists
         const existingRecord = await StaffAvailability.findOne({
           staff: staffId,
           day,
@@ -281,7 +122,6 @@ export const addStaffAvailability = async (req: Request, res: Response, next: Ne
           return;
         }
 
-        // Create and save the new availability record
         const newAvailability = new StaffAvailability({
           staff: staffId,
           day,
@@ -295,7 +135,6 @@ export const addStaffAvailability = async (req: Request, res: Response, next: Ne
       }
     }
 
-    // Group records by day
     const groupedByDay: Record<string, GroupedDayAvailability> = {};
 
     availabilityRecords.forEach(record => {
@@ -328,6 +167,7 @@ export const addStaffAvailability = async (req: Request, res: Response, next: Ne
     next(err);
   }
 };
+
 const getTodayDayOfWeek = () => {
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const today = new Date();
@@ -417,7 +257,7 @@ export const getAllStaff = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-  export const editStaff = async (req: Request, res: Response) => {
+export const editStaff = async (req: Request, res: Response) => {
     upload(req, res, async (err: any) => {
       if (err) {
         return res.status(400).json({ message: err.message });
@@ -455,10 +295,7 @@ export const getAllStaff = async (req: Request, res: Response): Promise<void> =>
     });
   };
   
-
-
-  //Delete staff
-  export const deleteStaff = async (req: Request, res: Response) => {
+export const deleteStaff = async (req: Request, res: Response) => {
     try {
       const { staffId } = req.params;
   
@@ -475,7 +312,6 @@ export const getAllStaff = async (req: Request, res: Response): Promise<void> =>
       res.status(500).json({ message: "Error deleting staff", error });
     }
   };
-  
 
 export const staffLogin = async (req: Request, res: Response) => {
     try {
@@ -508,7 +344,7 @@ export const staffLogin = async (req: Request, res: Response) => {
     }
   };
 
-  export const getUserProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (req: Request, res: Response) => {
     try {
       const userId = req.user.id; 
   
@@ -537,9 +373,7 @@ export const staffLogin = async (req: Request, res: Response) => {
     }
   };
 
-  const upload = fileUploadHandler();
-
-  export const updateProfile = async (req: Request, res: Response) => {
+export const updateProfile = async (req: Request, res: Response) => {
     upload(req, res, async (err: any) => {
       if (err) {
         return res.status(400).json({ message: err.message });
@@ -610,7 +444,7 @@ export const staffLogin = async (req: Request, res: Response) => {
     });
   };
 
-  export const setPassword = async (req: Request, res: Response) => {
+export const setPassword = async (req: Request, res: Response) => {
     try {
       const { email, newPassword, confirmPassword } = req.body;
 
@@ -634,8 +468,7 @@ export const staffLogin = async (req: Request, res: Response) => {
     }
   };
 
-
-  export const forgetPassword = async (req: Request, res: Response) => {
+export const forgetPassword = async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
 
@@ -687,8 +520,7 @@ export const staffLogin = async (req: Request, res: Response) => {
       res.status(500).json({ message: "Error verifying OTP", error });
     }
   };
-
-
+  
   export const resetPassword = async (req: Request, res: Response) => {
     try {
       const { email, newPassword, confirmPassword } = req.body;

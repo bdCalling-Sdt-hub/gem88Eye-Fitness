@@ -4,6 +4,8 @@ import Appointment from '../../modules/contact/appoinment.model';
 import { Location } from '../Admin/location.model';
 import Class from '../class/class.model'; 
 import moment from 'moment';
+
+
 export const createEvent = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const {
@@ -148,7 +150,6 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
     }
   };
   
-
 export const deleteEvent = async (req: Request, res: Response, next: NextFunction) => {
   const { eventId } = req.params; 
 
@@ -167,7 +168,6 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
     next(err); 
   }
 };
-
 
 const getDateRange = (range: string) => {
   const now = moment();
@@ -193,144 +193,6 @@ const getDateRange = (range: string) => {
   }
 };
 
-// export const getUpcomingAndPastAppointmentsEventsClasses = async (
-//   req: Request, 
-//   res: Response, 
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { location, dateRange } = req.query;
-//     const { startDate, endDate } = getDateRange(dateRange as string);
-//     const now = new Date();
-
-//     const locationFilter = location ? { location } : {};
-
-//     const allAppointments = await Appointment.find(locationFilter)
-//       .populate('contact')
-//       .populate('staff')
-//       .populate('lead')
-//       .populate('location'); 
-    
-//     // Then manually filter them by date
-//     const upcomingAppointments = allAppointments.filter(appointment => {
-//       const appointmentDate = new Date(appointment.date);
-      
-//       // Check if it's upcoming
-//       if (appointmentDate < now) return false;
-      
-//       // Apply date range if provided
-//       if (startDate && endDate) {
-//         return appointmentDate >= startDate && appointmentDate <= endDate;
-//       }
-      
-//       return true;
-//     });
-    
-//     const pastAppointments = allAppointments.filter(appointment => {
-//       const appointmentDate = new Date(appointment.date);
-      
-//       // Check if it's past
-//       if (appointmentDate >= now) return false;
-      
-//       // Apply date range if provided
-//       if (startDate && endDate) {
-//         return appointmentDate >= startDate && appointmentDate <= endDate;
-//       }
-      
-//       return true;
-//     });
-
-//     // ====== HANDLE EVENTS ======
-//     // Events already use Date objects
-//     const getEventQuery = (isPast: boolean) => {
-//       const query: any = {
-//         ...locationFilter
-//       };
-      
-//       if (isPast) {
-//         query.eventDate = { $lt: now };
-//       } else {
-//         query.eventDate = { $gte: now };
-//       }
-
-//       if (startDate && endDate) {
-//         query.eventDate = {
-//           ...(isPast ? { $lt: now } : { $gte: now }),
-//           $gte: startDate,
-//           $lte: endDate
-//         };
-//       }
-
-//       return query;
-//     };
-
-//     const upcomingEvents = await Event.find(getEventQuery(false))
-//       .populate('staff')
-//       .populate('location')
-    
-
-//     const pastEvents = await Event.find(getEventQuery(true))
-//       .populate('staff')
-//       .populate('location');
-
-//     // ====== HANDLE CLASSES ======
-//     // For classes with string dates, we'll also use the simpler approach
-//     const allClasses = await Class.find(locationFilter)
-//       .populate('staff')
-//       .populate('lead')
-//       .populate('location');
-    
-//     // Then manually filter them
-//     const upcomingClasses = allClasses.filter(classItem => {
-//       return classItem.schedule.some(session => {
-//         const classDate = new Date(session.date); 
-        
-//         // Check if the session is upcoming
-//         if (classDate < now) return false;
-        
-//         // Apply date range if provided
-//         if (startDate && endDate) {
-//           return classDate >= startDate && classDate <= endDate;
-//         }
-        
-//         return true;
-//       });
-//     });
-
-//      const pastClasses = allClasses.filter(classItem => {
-//       return classItem.schedule.some(session => {
-//         const classDate = new Date(session.date);
-        
-//         // Check if the session is past
-//         if (classDate >= now) return false;
-        
-//         // Apply date range if provided
-//         if (startDate && endDate) {
-//           return classDate >= startDate && classDate <= endDate;
-//         }
-        
-//         return true;
-//       });
-//     });
-
-//     // Send the response with the filtered data
-//     res.status(200).json({
-//       success: true,
-//       message: 'Upcoming and past appointments, events, and classes retrieved successfully!',
-//       data: {
-//         upcomingAppointments,
-//         pastAppointments,
-//         upcomingEvents,
-//         pastEvents,
-//         upcomingClasses,
-//         pastClasses,
-//       },
-//     });
-//   } catch (err) {
-//     next(err); // Pass the error to the global error handler
-//   }
-// };
-
 export const getUpcomingAndPastAppointmentsEventsClasses = async (
   req: Request,
   res: Response,
@@ -348,7 +210,7 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
 
     if (location) {
       const locationDoc = await Location.findOne({
-        locationName: new RegExp(String(location), 'i') // match location name case-insensitively
+        locationName: new RegExp(String(location), 'i') 
       }).select('_id locationName');
 
 
@@ -357,7 +219,7 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
         classLocationFilter = { location: locationDoc._id };
 
         eventLocationFilter = {
-          locationName: new RegExp(String(location), 'i') // Match locationName for Event model
+          locationName: new RegExp(String(location), 'i')
         };
       } else {
 
@@ -486,140 +348,6 @@ export const getUpcomingAndPastAppointmentsEventsClasses = async (
     next(err);
   }
 };
-
-
-// export const getUpcomingAndPastAppointmentsEventsClasses = async (
-//   req: Request, 
-//   res: Response, 
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { location, dateRange } = req.query;
-//     const { startDate, endDate } = getDateRange(dateRange as string);
-//     const now = new Date();
-
-//     const locationFilter = location ? { location } : {};
-
-//     const allAppointments = await Appointment.find(locationFilter)
-//       .populate('contact')  
-//       .populate('staff')     
-//       .populate('lead')      
-//       .populate('location');
-
-//     // Filter for upcoming appointments
-//     const upcomingAppointments = allAppointments.filter(appointment => {
-//       const appointmentDate = new Date(appointment.date);
-      
-//       // Check if it's upcoming
-//       if (appointmentDate < now) return false;
-      
-//       // Apply date range if provided
-//       if (startDate && endDate) {
-//         return appointmentDate >= startDate && appointmentDate <= endDate;
-//       }
-      
-//       return true;
-//     });
-
-//     // Filter for past appointments
-//     const pastAppointments = allAppointments.filter(appointment => {
-//       const appointmentDate = new Date(appointment.date);
-      
-//       // Check if it's past
-//       if (appointmentDate >= now) return false;
-      
-//       // Apply date range if provided
-//       if (startDate && endDate) {
-//         return appointmentDate >= startDate && appointmentDate <= endDate;
-//       }
-      
-//       return true;
-//     });
-
-//     // ====== HANDLE EVENTS ======
-//     const getEventQuery = (isPast: boolean) => {
-//       const query: any = {
-//         ...locationFilter
-//       };
-      
-//       if (isPast) {
-//         query.eventDate = { $lt: now };
-//       } else {
-//         query.eventDate = { $gte: now };
-//       }
-
-//       if (startDate && endDate) {
-//         query.eventDate = {
-//           ...(isPast ? { $lt: now } : { $gte: now }),
-//           $gte: startDate,
-//           $lte: endDate
-//         };
-//       }
-
-//       return query;
-//     };
-
-//     const upcomingEvents = await Event.find(getEventQuery(false))
-//       .populate('staff')
-//       .populate('location');  // Ensure location is populated
-
-//     const pastEvents = await Event.find(getEventQuery(true))
-//       .populate('staff')
-//       .populate('location');  // Ensure location is populated
-
-//     // ====== HANDLE CLASSES ======
-//     const allClasses = await Class.find(locationFilter)
-//       .populate('staff')
-//       .populate('lead')
-//       .populate('location');  // Ensure location is populated here
-    
-//     // Filter for upcoming active classes
-//     const upcomingClasses = allClasses.filter(classItem => {
-//       return classItem.status === 'active' && classItem.schedule.some(session => {
-//         const classDate = new Date(session.date); 
-        
-//         if (classDate < now) return false;
-        
-//         if (startDate && endDate) {
-//           return classDate >= startDate && classDate <= endDate;
-//         }
-        
-//         return true;
-//       });
-//     });
-
-//     // Filter for past active classes
-//     const pastClasses = allClasses.filter(classItem => {
-//       return classItem.status === 'active' && classItem.schedule.some(session => {
-//         const classDate = new Date(session.date);
-        
-//         if (classDate >= now) return false;
-        
-//         if (startDate && endDate) {
-//           return classDate >= startDate && classDate <= endDate;
-//         }
-        
-//         return true;
-//       });
-//     });
-
-//     // Send the response with the filtered data
-//     res.status(200).json({
-//       success: true,
-//       message: 'Upcoming and past appointments, events, and classes retrieved successfully!',
-//       data: {
-//         upcomingAppointments,
-//         pastAppointments,
-//         upcomingEvents,
-//         pastEvents,
-//         upcomingClasses,
-//         pastClasses,
-//       },
-//     });
-//   } catch (err) {
-//     next(err); // Pass the error to the global error handler
-//   }
-// };
 
 export const getUpcomingAndPastAppointmentsEventsClassesWithFilter = async (
   req: Request, 

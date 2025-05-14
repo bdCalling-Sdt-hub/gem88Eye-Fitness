@@ -4,7 +4,6 @@ import { sendEmailToLeadOrClients } from './mailer.contact.controller';
 
 const ClientRoutes = express.Router();
 
-// ClientRoutes.get('/clients/add', renderAddClientForm); 
 ClientRoutes.post('/clients/add', addClient); 
 ClientRoutes.post('/sendmail', sendEmailToLeadOrClients); 
 ClientRoutes.put('/clients/active/:id', updateClientStatus); 

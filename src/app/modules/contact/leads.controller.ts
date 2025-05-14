@@ -8,6 +8,9 @@ import { ObjectId } from 'mongoose';
 import Appointment from './appoinment.model';
 import { emailHelper } from '../../../helpers/emailHelper';
 import Class from '../class/class.model';
+const uploadCSV = fileUploadHandler(); 
+
+
 export const addLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { name, companyName,lead_email, address, gender, phone, staff, lead, note } = req.body;
 
@@ -41,59 +44,6 @@ export const addLead = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
-const uploadCSV = fileUploadHandler(); 
-
-// export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFunction): void => {
-//   uploadCSV(req, res, (err) => {
-//     if (err) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'File upload failed',
-//         error: err.message,
-//       });
-//     }
-
-
-//     const uploadedFile = (req as any).files['documents'][0]; 
-//     const filePath = uploadedFile.path;
-
-//     const leadsData: any[] = [];
-
-//     fs.createReadStream(filePath)
-//       .pipe(csvParser())
-//       .on('data', async (row) => {
-//         const { lead_name, lead_email, address, gender, phone} = row;
-
-//         if (lead_name && lead_email && address && gender && phone) {
-     
-//           const updatedLead = await Lead.findOneAndUpdate(
-//             { lead_email },
-//             { lead_name, address, gender, phone},
-//             { new: true, upsert: true }
-//           );
-//           leadsData.push(updatedLead);
-//         }
-//       })
-//       .on('end', () => {
-//         fs.unlinkSync(filePath);
-
-//         res.status(200).json({
-//           success: true,
-//           message: 'Leads updated successfully from CSV!',
-//           data: leadsData,
-//         });
-//       })
-//       .on('error', (error) => {
-
-//         fs.unlinkSync(filePath);
-//         return res.status(500).json({
-//           success: false,
-//           message: 'Error while parsing CSV',
-//           error: error.message,
-//         });
-//       });
-//   });
-// };
 export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFunction): void => {
   uploadCSV(req, res, (err) => {
     if (err) {
@@ -120,7 +70,6 @@ export const updateLeadsFromCsv = (req: Request, res: Response, next: NextFuncti
             const existingLead = await Lead.findOne({ lead_email });
 
             if (existingLead) {
-              // console.log(`Lead with email ${lead_email} already exists. Updating the lead.`);
               const updatedLead = await Lead.findOneAndUpdate(
                 { lead_email },
                 { name, address, gender, phone },
@@ -201,92 +150,23 @@ export const updateLead = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-// export const getLeadById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const { leadId } = req.params; // Extract leadId from URL params
-//   const { filter } = req.query; // Get the filter query parameter (upcoming or past)
-
-//   try {
-//     // Fetch the lead from the database using the provided leadId
-//     const lead = await Lead.findById(leadId)
-//       .populate('staff', 'name')  
-//       .populate('lead', 'lead_name') 
-
-      
-
-//     // Check if the lead was found
-//     if (!lead) {
-//       res.status(404).json({ success: false, message: 'Lead not found' });
-//       return;
-//     }
-
-//     // Fetch the appointments and classes for the lead
-//     const appointments = await Appointment.find({ lead: leadId });
-//     const classes = await Class.find({ lead: leadId })
-//     .populate('lead', 'lead_name')
-//     .populate('staff', 'name')
-//     .populate('schedule', 'date');
-
-//     if (appointments.length === 0 && classes.length === 0) {
-//       res.status(404).json({ success: false, message: 'No appointments or classes found for this lead' });
-//       return;
-//     }
-
-//     // Get the current date/time for filtering
-//     const currentDate = new Date();
-
-//     let filteredAppointments = appointments;
-//     let filteredClasses = classes;
-
-//     if (filter) {
-//       // Apply filtering based on the "filter" query parameter
-//       if (filter === 'upcoming') {
-//         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
-//         filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) > currentDate);
-//       } else if (filter === 'past') {
-//         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) <= currentDate);
-//         filteredClasses = classes.filter((classItem) => new Date(classItem.schedule.date) <= currentDate);
-//       } else {
-//          res.status(400).json({
-//           success: false,
-//           message: 'Invalid filter type. Use "upcoming" or "past".',
-//         });
-//       }
-//     } else {
-//       filteredAppointments = appointments;
-//       filteredClasses = classes;
-//     }
-
-//     const responseData = {
-//       lead,
-//       upcomingAppointments: filteredAppointments,
-//       pastAppointments: filteredAppointments,
-//       upcomingClasses: filteredClasses,
-//       pastClasses: filteredClasses,
-//     };
-
-//     res.status(200).json({
-//       success: true,
-//       message: 'Lead profile with filtered appointments and classes retrieved successfully',
-//       data: responseData,
-//     });
-//   } catch (err) {
-//     next(err); 
-//   }
-// };
 export const getLeadById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { leadId } = req.params;
-  const { filter } = req.query; 
+  const { filter } = req.query;
 
   try {
+    // Fetch the lead by ID
     const lead = await Lead.findById(leadId)
       .populate('staff', 'name') 
-      .populate('lead', 'name'); 
+      .populate('lead', 'name');
 
+    // If lead not found, return error response
     if (!lead) {
       res.status(404).json({ success: false, message: 'Lead not found' });
       return;
     }
 
+    // Fetch appointments and classes, even if no data is associated
     const appointments = await Appointment.find({ lead: leadId })
       .populate('staff', 'name')
       .populate('lead', 'name');
@@ -294,28 +174,22 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
     const classes = await Class.find({ lead: leadId })
       .populate('staff', 'name')
       .populate('lead', 'name')
-      .populate('schedule', 'date'); 
-
-    if (appointments.length === 0 && classes.length === 0) {
-      res.status(404).json({ success: false, message: 'No appointments or classes found for this lead' });
-      return;
-    }
+      .populate('schedule', 'date');
 
     const currentDate = new Date();
 
+    // Filtering logic based on the filter query
     let filteredAppointments = appointments;
     let filteredClasses = classes;
 
     if (filter) {
       if (filter === 'upcoming') {
-
         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) > currentDate);
         filteredClasses = classes.filter((classItem) => {
           return classItem.schedule.some(session => new Date(session.date) > currentDate);
         });
       } else if (filter === 'past') {
         filteredAppointments = appointments.filter((appointment) => new Date(appointment.date) <= currentDate);
-
         filteredClasses = classes.filter((classItem) => {
           return classItem.schedule.every(session => new Date(session.date) <= currentDate);
         });
@@ -327,24 +201,27 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
         return;
       }
     }
+
+    // Prepare the response data, showing the lead with empty arrays if no appointments or classes
     const responseData = {
       lead,
-      upcomingAppointments: filteredAppointments,
-      pastAppointments: filteredAppointments,
-      upcomingClasses: filteredClasses,
-      pastClasses: filteredClasses, 
+      upcomingAppointments: filteredAppointments.length > 0 ? filteredAppointments : [],
+      pastAppointments: filteredAppointments.length > 0 ? filteredAppointments : [],
+      upcomingClasses: filteredClasses.length > 0 ? filteredClasses : [],
+      pastClasses: filteredClasses.length > 0 ? filteredClasses : [],
     };
 
-
+    // Send response, without error about missing appointments/classes
     res.status(200).json({
       success: true,
       message: 'Lead profile with filtered appointments and classes retrieved successfully',
       data: responseData,
     });
   } catch (err) {
-    next(err);  
+    next(err);
   }
 };
+
 
 export const sendEmailToLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { leadId, subject, html } = req.body; 
@@ -397,8 +274,6 @@ export const deleteLead = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-
-
 export const getAllLeads = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const leads = await Lead.find();
@@ -410,7 +285,6 @@ export const getAllLeads = async (req: Request, res: Response, next: NextFunctio
     next(err);
   }
 };
-
 
 export const updateLeadStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const leadId = req.params.id; 

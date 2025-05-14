@@ -25,11 +25,7 @@ async function main() {
     const port = Number(config.port) || 8080;
       typeof config.port === 'number' ? config.port : Number(config.port);
 
-    // server = app.listen( config.ip_address as string, () => {
-    //   logger.info(
-    //     colors.yellow(`♻️  Application listening on port:${config.port}`)
-    //   );
-    // });
+
     server = app.listen(port, () => { //ip issues
       logger.info(colors.yellow(`♻️  Application listening on port:${port}`));
     });

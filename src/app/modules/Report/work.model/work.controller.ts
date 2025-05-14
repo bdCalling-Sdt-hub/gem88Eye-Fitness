@@ -7,24 +7,7 @@ import mongoose from 'mongoose';
 import { populate } from 'dotenv';
 import moment from 'moment';
 
-// const isDateWithinPeriod = async (instructorId: string, workDate: Date): Promise<boolean> => {
-//     try {
-//       const instructor = await mongoose.model('Instructor').findById(instructorId);
-      
-//       if (!instructor) {
-//         throw new Error("Instructor not found");
-//       }
-      
-//       const periodBeginning = new Date(instructor.periodBeginning);
-//       const periodEnding = new Date(instructor.periodEnding);
-//       const date = new Date(workDate);
-      
-//       return date >= periodBeginning && date <= periodEnding;
-//     } catch (error) {
-//       console.error("Error checking date validity:", error);
-//       throw error;
-//     }
-//   };
+
 const isDateWithinPeriod = async (instructorId: string, workDate: Date): Promise<boolean> => {
   try {
     const instructor = await mongoose.model('Instructor').findById(instructorId);
@@ -69,7 +52,7 @@ export const createInstructor = async (req: Request, res: Response) => {
     }
   };
   
-  export const getInstructors = async (req: Request, res: Response) => {
+export const getInstructors = async (req: Request, res: Response) => {
     try {
      
       const instructors = await InstructorDetails.find()
@@ -82,6 +65,7 @@ export const createInstructor = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Error fetching instructors' });
     }
   };
+
   export const getInstructorById = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -100,7 +84,7 @@ export const createInstructor = async (req: Request, res: Response) => {
   
 const isTwoWeeksLimitReached = async (instructorId: mongoose.Types.ObjectId) => {
     const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14); // Subtract 14 days
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14); 
   
    
     const workCount = await WorkDetails.countDocuments({
@@ -112,32 +96,9 @@ const isTwoWeeksLimitReached = async (instructorId: mongoose.Types.ObjectId) => 
       'milesDetails.date': { $gte: twoWeeksAgo },
     });
   
-    return workCount + milesCount >= 14;  // Check if the total count exceeds or equals 14
+    return workCount + milesCount >= 14; 
   };
   
-//   export const createWorkDetails = async (req: Request, res: Response) => {
-//     try {
-//       const { instructorId, workDetails } = req.body;
-  
-//       // Check if two-week limit has been reached
-//       const limitReached = await isTwoWeeksLimitReached(instructorId);
-//       if (limitReached) {
-//         return res.status(400).json({ message: "Two-week limit reached. Cannot add more details." });
-//       }
-  
-
-//       const newWorkDetails = new WorkDetails({
-//         workDetails,
-//         instructor: instructorId, 
-//       });
-  
-//       await newWorkDetails.save(); 
-//       return res.status(201).json(newWorkDetails); 
-//     } catch (error) {
-//       console.error(error);
-//       return res.status(500).json({ message: 'Error creating work details' });
-//     }
-//   };
 export const createWorkDetails = async (req: Request, res: Response) => {
     try {
       const { instructorId, workDetails } = req.body;
@@ -176,7 +137,7 @@ export const createWorkDetails = async (req: Request, res: Response) => {
     }
   };
   
-  export const createWeek1WorkDetails = async (req: Request, res: Response) => {
+export const createWeek1WorkDetails = async (req: Request, res: Response) => {
     try {
       const { instructorId, workDetails } = req.body;
   
@@ -227,7 +188,6 @@ export const createWeek2WorkDetails = async (req: Request, res: Response) => {
   try {
     const { instructorId, workDetails } = req.body;
 
-    // Ensure that the instructor has a period beginning and ending date set
     const instructor = await InstructorDetails.findById(instructorId);
     if (!instructor) {
       return res.status(400).json({ message: "Instructor not found." });
@@ -246,7 +206,6 @@ export const createWeek2WorkDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "The work date must be within the Week 2 period." });
     }
 
-    // Check if a work detail already exists for this date in Week 2
     const existingWorkDetail = await WorkDetails.findOne({ 
       instructor: instructorId, 
       "workDetails.date": workDetails.date 
@@ -269,8 +228,7 @@ export const createWeek2WorkDetails = async (req: Request, res: Response) => {
   }
 };
 
-
-  export const getWorkDetails = async (req: Request, res: Response) => {
+export const getWorkDetails = async (req: Request, res: Response) => {
     try {
       const { workDetailsId } = req.params;
   
@@ -286,35 +244,7 @@ export const createWeek2WorkDetails = async (req: Request, res: Response) => {
     }
   };
 
-//   export const createMilesDetails = async (req: Request, res: Response) => {
-//     try {
-//       const { instructorId, milesDetails } = req.body;
-  
-//       const limitReached = await isTwoWeeksLimitReached(instructorId);
-//       if (limitReached) {
-//         return res.status(400).json({ message: "Two-week limit reached. Cannot add more details." });
-//       }
-
-
-  
-//       const newMilesDetails = new MilesDetails({
-//         milesDetails,
-//         instructor: instructorId, 
-        
-//       });
-
-  
-//       await newMilesDetails.save(); 
-//       return res.status(201).json(newMilesDetails); 
-//     } catch (error) {
-//       console.error(error);
-//       return res.status(500).json({ message: 'Error creating miles details' });
-//     }
-//   };
-
-  //get miles details individual by id
-  
-  export const createMilesDetails = async (req: Request, res: Response) => {
+export const createMilesDetails = async (req: Request, res: Response) => {
     try {
       const { instructorId, milesDetails } = req.body;
    
@@ -351,7 +281,7 @@ export const createWeek2WorkDetails = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Error creating miles details' });
     }
   };
-  export const getMilesDetails = async (req: Request, res: Response) => {
+export const getMilesDetails = async (req: Request, res: Response) => {
     try {   
       const { milesDetailsId } = req.params;
   
@@ -577,167 +507,7 @@ const overallTotals = {
       return res.status(500).json({ message: 'Error fetching data' });
     }
   };
-// export const getAllDataByInstructorId = async (req: Request, res: Response) => {
-//     try {
-//       const { instructorId } = req.params;
-  
-//       const instructor = await InstructorDetails.findById(instructorId);
-//       if (!instructor) {
-//         return res.status(404).json({ message: 'Instructor not found' });
-//       }
-  
-//       await instructor.populate('instructorName');
-  
-//       const workDetails = await WorkDetails.find({ instructor: instructorId });
-//       const milesDetails = await MilesDetails.find({ instructor: instructorId });
-  
-//       const processedWorkDetails = workDetails.map((workDetail) => {
-//         const { hours, hourRate } = workDetail.workDetails;
-//         const totalAmount = hours * hourRate;
-//         return {
-//           ...workDetail.toObject(),
-//           totalAmount,
-//           date: new Date(workDetail.workDetails.date),
-//         };
-//       });
-  
-//       const processedMilesDetails = milesDetails.map((mileDetail) => {
-//         const { miles, mileRate } = mileDetail.milesDetails;
-//         const totalAmount = miles * mileRate;
-//         return {
-//           ...mileDetail.toObject(),
-//           totalAmount,
-//           date: new Date(mileDetail.milesDetails.date),
-//         };
-//       });
-  
-//       const periodBeginning = new Date(instructor.periodBeginning);
-//       const periodEnding = new Date(instructor.periodEnding);
-  
-//       const weeklyData = [];
-  
-//       // First week
-//       const week1Start = new Date(periodBeginning);
-//       const week1End = new Date(periodBeginning);
-//       week1End.setDate(week1End.getDate() + 6); // 7 days total for first week
-      
-//       // Second week
-//       const week2Start = new Date(week1End);
-//       week2Start.setDate(week2Start.getDate() + 1); // Start day after first week ends
-//       const week2End = new Date(periodEnding);
-  
-//       // Filter work details by date range
-//       const week1WorkDetails = processedWorkDetails.filter(
-//         detail => detail.date >= week1Start && detail.date <= week1End
-//       );
-  
-//       const week2WorkDetails = processedWorkDetails.filter(
-//         detail => detail.date >= week2Start && detail.date <= week2End
-//       );
-  
-//       // Week 1 calculations
-//       const week1WorkingHours = week1WorkDetails.reduce(
-//         (total, detail) => total + detail.workDetails.hours, 0
-//       );
-  
-//       const week1WorkAmount = week1WorkDetails.reduce(
-//         (total, detail) => total + detail.totalAmount, 0
-//       );
-  
-//       // Calculate average rates for Week 1
-//       const week1AvgHourRate = week1WorkingHours > 0 
-//         ? week1WorkDetails.reduce((total, detail) => total + detail.workDetails.hourRate * detail.workDetails.hours, 0) / week1WorkingHours 
-//         : 0;
-  
-//       // Week 2 calculations
-//       const week2WorkingHours = week2WorkDetails.reduce(
-//         (total, detail) => total + detail.workDetails.hours, 0
-//       );
-  
-//       const week2WorkAmount = week2WorkDetails.reduce(
-//         (total, detail) => total + detail.totalAmount, 0
-//       );
-  
-//       // Calculate average rates for Week 2
-//       const week2AvgHourRate = week2WorkingHours > 0 
-//         ? week2WorkDetails.reduce((total, detail) => total + detail.workDetails.hourRate * detail.workDetails.hours, 0) / week2WorkingHours 
-//         : 0;
-  
-//       // Add Week 1 data (Work Details only)
-//       weeklyData.push({
-//         weekNumber: 1,
-//         weekStart: week1Start,
-//         weekEnd: week1End,
-//         workDetails: week1WorkDetails,  // Week 1 work details only
-//         summary: {
-//           totalWorkingHours: week1WorkingHours,
-//           avgHourRate: parseFloat(week1AvgHourRate.toFixed(2)),
-//           totalWorkAmount: parseFloat(week1WorkAmount.toFixed(2)),
-//         }
-//       });
-  
-//       // Add Week 2 data (Work Details only)
-//       weeklyData.push({
-//         weekNumber: 2,
-//         weekStart: week2Start,
-//         weekEnd: week2End,
-//         workDetails: week2WorkDetails,  // Week 2 work details only
-//         summary: {
-//           totalWorkingHours: week2WorkingHours,
-//           avgHourRate: parseFloat(week2AvgHourRate.toFixed(2)),
-//           totalWorkAmount: parseFloat(week2WorkAmount.toFixed(2)),
-//         }
-//       });
-  
-//       // Calculate overall totals (work details only)
-//       const overallTotals = {
-//         totalWorkingHours: week1WorkingHours + week2WorkingHours,
-//         totalWorkAmount: parseFloat((week1WorkAmount + week2WorkAmount).toFixed(2)),
-//         grandTotalAmount: parseFloat((week1WorkAmount + week2WorkAmount).toFixed(2)),
-//       };
-  
-//       // Biweekly Section: Combine work details for both weeks (without miles)
-//       const biweeklyWorkDetails = [...week1WorkDetails, ...week2WorkDetails];
-  
-//       // Calculate total working hours and total amount for biweekly period
-//       const totalBiweeklyWorkingHours = biweeklyWorkDetails.reduce(
-//         (total, detail) => total + detail.workDetails.hours, 0
-//       );
-  
-//       const totalBiweeklyWorkAmount = biweeklyWorkDetails.reduce(
-//         (total, detail) => total + detail.totalAmount, 0
-//       );
-  
-//       // Calculate average hour rate for biweekly period
-//       const biweeklyAvgHourRate = totalBiweeklyWorkingHours > 0
-//         ? biweeklyWorkDetails.reduce(
-//             (total, detail) => total + detail.workDetails.hourRate * detail.workDetails.hours, 0
-//           ) / totalBiweeklyWorkingHours
-//         : 0;
-  
-//       // Biweekly summary (no miles details)
-//       const biweeklyData = {
-//         workDetails: biweeklyWorkDetails, // All work details for the biweekly period
-//         summary: {
-//           totalWorkingHours: totalBiweeklyWorkingHours,
-//           avgHourRate: parseFloat(biweeklyAvgHourRate.toFixed(2)),
-//           totalWorkAmount: parseFloat(totalBiweeklyWorkAmount.toFixed(2)),
-//         },
-//       };
-  
-//       return res.status(200).json({
-//         instructor,
-//         weeklyData,
-//         biweeklyData, // Include biweekly data
-//         overallTotals
-//       });
-//     } catch (error) {
-//       console.error(error);
-//       return res.status(500).json({ message: 'Error fetching data' });
-//     }
-//   };
-  
-  
+
   
   
 

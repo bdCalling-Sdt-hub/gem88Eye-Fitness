@@ -7,98 +7,9 @@ import Staff from '../staff/staff.model';
 import Lead from './leads.model';     
 
 import { scheduleNotification } from '../../../util/scheduleNotification';
-// import  io  from '../../../helpers/socketHelper ';
 import Notification from '../notification/notification.model';
 import Admin from '../Admin/admin.model';
 import moment from 'moment';
-
-
-// export const bookAppointment = async (
-//   req: Request<{}, {}, AppointmentRequestBody>,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   const { contactName, service, staffId, leadId, date, time } = req.body;
-//   if (!contactName || !service || !staffId || !leadId || !date || !time) {
-//     res.status(400).json({ success: false, message: 'All fields are required!' });
-//     return;
-//   }
-  
-//   try {
-//     const client = await Client.findOne({ client_name: contactName });
-//     const staff = await Staff.findById(staffId);
-//     const lead = await Lead.findById(leadId);
-    
-//     if (!client || !staff || !lead) {
-//       res.status(404).json({ success: false, message: 'Client, Staff, or Lead not found' });
-//       return;
-//     }
-    
-//     const appointmentDateTime = new Date(`${date}T${time}`);
-//     if (isNaN(appointmentDateTime.getTime())) {
-//       res.status(400).json({ success: false, message: 'Invalid date or time format' });
-//       return;
-//     }
-    
-//     const status = moment(appointmentDateTime).isBefore(moment()) ? 'completed' : 'upcoming';
-    
-//     const newAppointment = new Appointment({
-//       contact: client._id,
-//       service,
-//       staff: staff._id,
-//       lead: lead._id,
-//       date,
-//       time,
-//       status,
-//     });
-    
-//     await newAppointment.save();
-    
-//     createAdminNotifications(
-//       service,
-//       'Appointment',
-//       appointmentDateTime,
-//       req.app.get('io') 
-//     );
-    
-//     const notificationMessage = `You have a new appointment for ${service}`;
-    
-//     const clientNotification = scheduleNotification(
-//       (client._id as mongoose.Types.ObjectId).toString(),
-//       notificationMessage,
-//       new Date(),
-//       'Appointment',
-//       req.app.get('io'),
-//       true
-//     );
-    
-//     const staffNotification = scheduleNotification(
-//       (staff._id as mongoose.Types.ObjectId).toString(),
-//       notificationMessage,
-//       new Date(),
-//       'Appointment',
-//       req.app.get('io'),
-//       true
-//     );
-    
-//     const leadNotification = scheduleNotification(
-//       (lead._id as mongoose.Types.ObjectId).toString(),
-//       notificationMessage,
-//       new Date(),
-//       'Appointment',
-//       req.app.get('io'),
-      
-//     );
-    
-//     res.status(201).json({
-//       success: true,
-//       message: 'Appointment booked and notifications sent!',
-//       data: newAppointment,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
 
 export const bookAppointment = async (
   req: Request<{}, {}, AppointmentRequestBody>,

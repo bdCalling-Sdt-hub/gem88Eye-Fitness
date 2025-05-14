@@ -167,8 +167,6 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
 
       if (appointmentDate.isBefore(today, 'day')) {
         status = 'Completed'; 
-      } else if (appointmentDate.isSame(today, 'day')) {
-        status = 'Today'; 
       }
 
       return {

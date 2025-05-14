@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const controller_1 = require("./controller");
+const auth_1 = require("../../middlewares/auth");
+const AdminRoutes = (0, express_1.Router)();
+AdminRoutes.post("/register", controller_1.registerAdmin);
+AdminRoutes.post("/login", controller_1.loginAdmin);
+AdminRoutes.post("/change-password", auth_1.authenticateAdmin, controller_1.changePassword);
+AdminRoutes.post("/location", auth_1.authenticateAdmin, controller_1.createLocation);
+AdminRoutes.get("/location", auth_1.authenticateAdmin, controller_1.getAllLocations);
+AdminRoutes.put('/location/status', auth_1.authenticateAdmin, controller_1.updateLocationStatus);
+AdminRoutes.put('/location/:locationId', auth_1.authenticateAdmin, controller_1.updateLocation);
+AdminRoutes.delete('/location/:locationId', auth_1.authenticateAdmin, controller_1.deleteLocation);
+//password-forget
+AdminRoutes.post("/forget-password", auth_1.authenticateAdmin, controller_1.forgetPassword);
+AdminRoutes.post("/verify-otp", auth_1.authenticateAdmin, controller_1.verifyOTP);
+AdminRoutes.post("/reset-password", auth_1.authenticateAdmin, controller_1.resetPassword);
+AdminRoutes.get('/profile', auth_1.authenticateAdmin, controller_1.getAdminProfile);
+AdminRoutes.put('/profile', auth_1.authenticateAdmin, controller_1.updateAdminProfile);
+exports.default = AdminRoutes;

@@ -160,13 +160,11 @@ export const getLeadById = async (req: Request, res: Response, next: NextFunctio
       .populate('staff', 'name') 
       .populate('lead', 'name');
 
-    // If lead not found, return error response
     if (!lead) {
       res.status(404).json({ success: false, message: 'Lead not found' });
       return;
     }
 
-    // Fetch appointments and classes, even if no data is associated
     const appointments = await Appointment.find({ lead: leadId })
       .populate('staff', 'name')
       .populate('lead', 'name');
